@@ -18,6 +18,7 @@ from six.moves import map, range
 # [filename, image_signature, action_stack]
 STORAGE_PLACEHOLDER = json.dumps({'filename': None, 'image_signature': None, 'action_stack': []})
 
+IM_PIL_PLACEHOLDER = Image.open('./images/default.jpg').copy()
 
 GRAPH_PLACEHOLDER = dcc.Graph(id='interactive-image', style={'height': '80vh'})
 

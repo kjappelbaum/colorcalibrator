@@ -15,7 +15,8 @@ from six.moves import range
 
 from . import dash_reusable_components as drc
 from .app import app
-from .utils import (GRAPH_PLACEHOLDER, STORAGE_PLACEHOLDER, calibrate_image, flip_image, get_average_color, mirror_image, plot_parity, rotate_image)
+from .utils import (GRAPH_PLACEHOLDER, STORAGE_PLACEHOLDER, calibrate_image, flip_image, get_average_color,
+                    mirror_image, plot_parity, rotate_image)
 
 SESSION_ID = str(uuid.uuid4())
 
@@ -336,6 +337,7 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
     # If a new file was uploaded (new file name changed)
     if new_filename and new_filename != filename:
         # Replace filename
+        session.clear()
 
         # Update the storage dict
         storage['filename'] = new_filename
@@ -343,8 +345,7 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
         # Parse the string and convert to pil
         string = content.split(';base64,')[-1]
         im_pil = drc.b64_to_pil(string)
-
-        session['filename'] = new_filename
+        
         session['image_pil'] = im_pil
 
         # Resets the action stack
@@ -362,26 +363,26 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
 
         # run calibration
         if (run_timestamp > rotate_timestamp and run_timestamp > flip_timestamp and run_timestamp > mirror_timestamp):
-            img, merged_df = calibrate_image(session['image_pil'], rows, columns, calibration_card, excluded)
+            img, merged_df = calibrate_image(session.pop('image_pil'), rows, columns, calibration_card, excluded)
             session['image_pil'] = img
             storage['merged_df'] = merged_df.to_json()
 
         # mirror the image
         elif (mirror_timestamp > rotate_timestamp and mirror_timestamp > flip_timestamp and
               mirror_timestamp > run_timestamp):
-            img = mirror_image(session['image_pil'])
+            img = mirror_image(session.pop('image_pil'))
             session['image_pil'] = img
 
         # flip the image
         elif (flip_timestamp > rotate_timestamp and flip_timestamp > mirror_timestamp and
               flip_timestamp > run_timestamp):
-            img = flip_image(session['image_pil'])
+            img = flip_image(session.pop('image_pil'))
             session['image_pil'] = img
 
         # rotate the image by 90 degree
         elif (rotate_timestamp > flip_timestamp and rotate_timestamp > mirror_timestamp and
               rotate_timestamp > run_timestamp):
-            img = rotate_image(session['image_pil'])
+            img = rotate_image(session.pop('image_pil'))
             session['image_pil'] = img
 
     return [

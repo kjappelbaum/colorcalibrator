@@ -17,5 +17,5 @@ class Config:  # pylint:disable=too-few-public-methods
     FLASK_ENV = environ.get('FLASK_ENV')
 
     # Flask-Session
-    SESSION_TYPE = 'redis'
+    SESSION_TYPE = 'filesystem'  # there is some issue with images getting to large for the heroku redis
     SESSION_REDIS = redis.from_url(os.environ.get('REDIS_URL', 'redis://localhost:6379'))

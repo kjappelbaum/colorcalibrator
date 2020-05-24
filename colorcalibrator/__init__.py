@@ -11,6 +11,7 @@ from flask import session
 from . import layout
 from ._version import get_versions
 from .app import app, server
+from .utils import IM_PIL_PLACEHOLDER
 
 __version__ = get_versions()['version']
 del get_versions
@@ -25,6 +26,7 @@ app.layout = html.Div([dcc.Location(id='url', refresh=False), html.Div(id='page-
 def display_page(pathname):
     """Display the layout as function of the url"""
     session.clear()
+    session['image_pil'] = IM_PIL_PLACEHOLDER
 
     app.logger.info('Pathname is {}'.format(pathname))
     if pathname == '/':
