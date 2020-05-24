@@ -335,8 +335,6 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
     if new_filename and new_filename != filename:
         # Replace filename
 
-        print((filename, 'replaced by', new_filename))
-
         # Update the storage dict
         storage['filename'] = new_filename
 
