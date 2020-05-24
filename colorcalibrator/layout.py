@@ -38,7 +38,7 @@ def serve_layout():
             children=[
                 html.Div([
                     html.
-                    P('Upload your image and ensure that the black batch is in the top left corner (flip and rotation buttons will be added in the next releaese).'
+                    P('Upload your image and ensure that the black batch is in the top left corner (use the flip or rotation where needed).'
                      ),
                     html.
                     P("Please make sure that there are no spotlights, this will make the color calibration fail. In case there are issues with spotlights, you will notice this in the partity plot, in which no longer all points fall on a line. If some points don't fall on a line, you can exclude those patches from the calibration."
@@ -202,7 +202,11 @@ def serve_layout():
         html.Div(
             [
                 html.Hr(),
-                html.Div('Built with Dash and plantcv.'),
+                html.Div([
+                    'Built with ',
+                    html.A('Dash', href='https://plotly.com/dash/'), ' and ',
+                    html.A('plantcv', href='https://plantcv.danforthcenter.org/'), '.'
+                ]),
                 html.Footer(
                     '© Laboratory of Molecular Simulation (LSMO), École polytechnique fédérale de Lausanne (EPFL)'),
             ],
@@ -213,6 +217,16 @@ def serve_layout():
 
 
 app.layout = serve_layout
+
+
+def init_timestamp(timestamp):
+    """Set the timestamp to zero in case the button has not been clicked, otherwise give an int for the ranking"""
+    try:
+        timestamp = int(timestamp)
+    except TypeError:
+        timestamp = 0
+
+    return timestamp
 
 
 @app.callback(
@@ -341,10 +355,11 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
     # we want to run colorcalibration as name wasn't changed
     else:
         # https://community.plotly.com/t/input-two-or-more-button-how-to-tell-which-button-is-pressed/5788/29
-        run_timestamp = int(run_timestamp)
-        rotate_timestamp = int(rotate_timestamp)
-        flip_timestamp = int(flip_timestamp)
-        mirror_timestamp = int(mirror_timestamp)
+
+        run_timestamp = init_timestamp(run_timestamp)
+        rotate_timestamp = init_timestamp(rotate_timestamp)
+        flip_timestamp = init_timestamp(flip_timestamp)
+        mirror_timestamp = init_timestamp(mirror_timestamp)
 
         # run calibration
         if (run_timestamp > rotate_timestamp and run_timestamp > flip_timestamp and run_timestamp > mirror_timestamp):

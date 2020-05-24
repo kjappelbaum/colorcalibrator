@@ -10,7 +10,7 @@ import dash_core_components as dcc
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from PIL import Image
+from PIL import Image, ImageOps
 from plantcv import plantcv as pcv
 from plotly.subplots import make_subplots
 from six.moves import map, range
@@ -231,8 +231,8 @@ def rotate_image(image):
 
 
 def flip_image(image):
-    return image.flip()
+    return ImageOps.flip(image)
 
 
 def mirror_image(image):
-    return image.mirror()
+    return ImageOps.mirror(image)
