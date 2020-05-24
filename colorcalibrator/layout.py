@@ -72,8 +72,8 @@ def serve_layout():
                                 ]),
                                 drc.Card([
                                     html.Button(
-                                        'rotate clockwise by 90°',
-                                        id='rotate90',
+                                        'rotate counter clockwise by 90°',
+                                        id='rotate',
                                         style={
                                             'margin-right': '10px',
                                             'margin-top': '5px',
