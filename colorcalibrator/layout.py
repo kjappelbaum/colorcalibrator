@@ -344,7 +344,6 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
         string = content.split(';base64,')[-1]
         im_pil = drc.b64_to_pil(string)
 
-        session['image_string'] = string
         session['filename'] = new_filename
         session['image_pil'] = im_pil
 
