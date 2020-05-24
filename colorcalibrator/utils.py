@@ -18,13 +18,18 @@ from six.moves import map, range
 # [filename, image_signature, action_stack]
 STORAGE_PLACEHOLDER = json.dumps({'filename': None, 'image_signature': None, 'action_stack': []})
 
-IM_PIL_PLACEHOLDER = Image.open('./images/default.jpg').copy()
 
 GRAPH_PLACEHOLDER = dcc.Graph(id='interactive-image', style={'height': '80vh'})
 
 TARGET_IMG_SPYDER24 = np.load('./data/target_img.npy')
 TARGET_MASK_SPYDER24 = np.load('./data/target_mask.npy')
 
+
+def pil_to_array(pil):
+    return np.asarray(pil)
+
+def array_to_pil(array):
+    return Image.fromarray(array)
 
 def calibrate_image(image, nrows, ncols, card, excluded=None, radius=20):  # pylint:disable=too-many-locals
     """Use plantcv to automatically calibrate the image"""

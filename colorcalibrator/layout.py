@@ -15,8 +15,7 @@ from six.moves import range
 
 from . import dash_reusable_components as drc
 from .app import app
-from .utils import (GRAPH_PLACEHOLDER, STORAGE_PLACEHOLDER, calibrate_image, flip_image, get_average_color,
-                    mirror_image, plot_parity, rotate_image)
+from .utils import (GRAPH_PLACEHOLDER, STORAGE_PLACEHOLDER, calibrate_image, flip_image, get_average_color, mirror_image, plot_parity, rotate_image)
 
 SESSION_ID = str(uuid.uuid4())
 
