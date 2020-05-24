@@ -35,7 +35,7 @@ app = dash.Dash(  # pylint:disable=invalid-name
 
 server = app.server  # pylint:disable=invalid-name
 
-app.config.suppress_callback_exceptions = False
+app.config.suppress_callback_exceptions = True
 app.title = 'colorcalibrator'
 
 server.config.from_object('config.Config')

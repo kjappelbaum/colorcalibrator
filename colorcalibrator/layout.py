@@ -276,12 +276,15 @@ def update_exlude_options(rows, columns):
 )
 def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argument
     """Print the result of the RGB measurement"""
-    rgb = get_average_color(
-        selected_data['range']['x'],
-        selected_data['range']['y'],
-        session.get('image_pil'),
-    )
-    return html.Div(['Red {}, green {}, blue {}'.format(int(rgb[0]), int(rgb[1]), int(rgb[2]))])
+    try:
+        rgb = get_average_color(
+            selected_data['range']['x'],
+            selected_data['range']['y'],
+            session.get('image_pil'),
+        )
+        return html.Div(['Red {}, green {}, blue {}'.format(int(rgb[0]), int(rgb[1]), int(rgb[2]))])
+    except Exception:
+        return html.Div([''])
 
 
 @app.callback(
