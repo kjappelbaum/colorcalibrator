@@ -15,7 +15,7 @@ from plantcv import plantcv as pcv
 from plotly.subplots import make_subplots
 from six.moves import map, range
 
-from . import dash_reusable_components as drc
+pcv.params.debug = None
 
 # [filename, image_signature, action_stack]
 STORAGE_PLACEHOLDER = json.dumps({'filename': None, 'image_signature': None, 'action_stack': []})
