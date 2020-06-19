@@ -3,8 +3,8 @@
 from __future__ import absolute_import, print_function
 
 import json
-import tempfile
 
+import colour
 import cv2
 import dash_core_components as dcc
 import numpy as np
@@ -18,21 +18,26 @@ from six.moves import map, range
 # [filename, image_signature, action_stack]
 STORAGE_PLACEHOLDER = json.dumps({'filename': None, 'image_signature': None, 'action_stack': []})
 
-IM_PIL_PLACEHOLDER = Image.open('./images/default.jpg').copy()
+IM_PIL_PLACEHOLDER = Image.open('./images/default.jpg')
 
 GRAPH_PLACEHOLDER = dcc.Graph(id='interactive-image', style={'height': '80vh'})
 
-TARGET_IMG_SPYDER24 = np.load('./data/target_img.npy')
-TARGET_MASK_SPYDER24 = np.load('./data/target_mask.npy')
+TARGET_SPYDER24 = np.array([[43, 41, 43], [80, 80, 78], [122, 118, 116], [161, 157, 14], [202, 198, 195],
+                            [249, 242, 238], [25, 55, 135], [57, 146, 64], [186, 26, 51], [245, 205, 0], [192, 75, 145],
+                            [0, 127, 159], [238, 158, 25], [157, 188, 54], [83, 58, 106], [195, 79, 95], [58, 88, 159],
+                            [222, 118, 32], [112, 76, 60], [197, 145, 125], [87, 120, 155], [82, 106, 60],
+                            [126, 125, 174], [98, 187, 166]])
 
 
 def pil_to_array(pil):
     return np.asarray(pil)
 
+
 def array_to_pil(array):
     return Image.fromarray(array)
 
-def calibrate_image(image, nrows, ncols, card, excluded=None, radius=20):  # pylint:disable=too-many-locals
+
+def calibrate_image(image, nrows, ncols, card, excluded=None, algorithm='finlayson', radius=20):  # pylint:disable=too-many-locals, too-many-arguments
     """Use plantcv to automatically calibrate the image"""
     if excluded is None:
         excluded = []
@@ -48,30 +53,47 @@ def calibrate_image(image, nrows, ncols, card, excluded=None, radius=20):  # pyl
         ncols=ncols,
         exclude=excluded,
     )
+    _, source_matrix = pcv.transform.get_color_matrix(opencv_image, source_mask)
 
     if card == 'spyder24':
-        target_img = TARGET_IMG_SPYDER24
-        target_mask = TARGET_MASK_SPYDER24
+        reference = TARGET_SPYDER24
     else:
         raise NotImplementedError
 
-    with tempfile.TemporaryDirectory() as dirpath:
-        tm, sm, _, corrected_img = pcv.transform.correct_color(  #pylint:disable=invalid-name
-            target_img=target_img,
-            target_mask=target_mask,
-            source_img=opencv_image,
-            source_mask=source_mask,
-            output_directory=dirpath,
-        )
+    corrected_img = opencv_image.copy()
+
+    if algorithm == 'finlayson':
+        algorithm_ = 'Finlayson 2015'
+    elif algorithm == 'cheung':
+        algorithm_ = 'Cheung 2004'
+    elif algorithm == 'vandermonde':
+        algorithm_ = 'Vandermonde'
+    else:
+        # log this case
+        algorithm_ = 'Finlayson 2015'
+
+    if isinstance(excluded, list):
+        source_matrix = np.delete(source_matrix, excluded, axis=0)
+        reference = np.delete(reference, excluded, axis=0)
+
+    corrected_img[:] = colour.colour_correction(opencv_image[:], source_matrix[:, 1:], reference, algorithm_)
+
+    _, corrected_matrix = pcv.transform.get_color_matrix(corrected_img, source_mask)
+    target_matrix = corrected_matrix.copy()
+    target_matrix[:, 1:] = TARGET_SPYDER24
+
+    label = np.arange(0, len(target_matrix))
+    corrected_matrix[:, 0] = label
+    target_matrix[:, 0] = label
 
     img = cv2.cvtColor(corrected_img, cv2.COLOR_BGR2RGB)
     im_pil = Image.fromarray(img)
 
-    df_sm = pd.DataFrame(sm, columns=['label', 'r', 'g', 'b'])
-    df_tm = pd.DataFrame(tm, columns=['label', 'r', 'g', 'b'])
+    df_sm = pd.DataFrame(corrected_matrix, columns=['label', 'r', 'g', 'b'])
+    df_tm = pd.DataFrame(target_matrix, columns=['label', 'r', 'g', 'b'])
 
     merged_df = pd.merge(df_sm, df_tm, left_on='label', right_on='label', suffixes=('_source', '_target'))
-    merged_df['label'] = merged_df['label'] / 10
+    merged_df['label'] = merged_df['label']
 
     return im_pil, merged_df
 
@@ -117,77 +139,9 @@ def plot_parity(merged_df):
     )
 
     fig.update_layout(showlegend=False)
+    fig['layout'].update(margin=dict(l=0, r=0, b=0, t=0))
 
     return fig
-
-
-def show_histogram(image):
-    """Show the RGB channels as histogram"""
-
-    def hg_trace(name, color, hg):  # pylint:disable=invalid-name
-        line = go.Scatter(
-            x=list(range(0, 256)),
-            y=hg,
-            name=name,
-            line=dict(color=(color)),
-            mode='lines',
-            showlegend=False,
-        )
-        fill = go.Scatter(
-            x=list(range(0, 256)),
-            y=hg,
-            mode='fill',
-            name=name,
-            line=dict(color=(color)),
-            fill='tozeroy',
-            hoverinfo='none',
-        )
-
-        return line, fill
-
-    hg = image.histogram()  # pylint:disable=invalid-name
-
-    if image.mode == 'RGBA':
-        rhg = hg[0:256]
-        ghg = hg[256:512]
-        bhg = hg[512:768]
-        ahg = hg[768:]
-
-        data = [
-            *hg_trace('Red', '#FF4136', rhg),
-            *hg_trace('Green', '#2ECC40', ghg),
-            *hg_trace('Blue', '#0074D9', bhg),
-            *hg_trace('Alpha', 'gray', ahg),
-        ]
-
-        title = 'RGBA Histogram'
-
-    elif image.mode == 'RGB':
-        # Returns a 768 member array with counts of R, G, B values
-        rhg = hg[0:256]
-        ghg = hg[256:512]
-        bhg = hg[512:768]
-
-        data = [
-            *hg_trace('Red', '#FF4136', rhg),
-            *hg_trace('Green', '#2ECC40', ghg),
-            *hg_trace('Blue', '#0074D9', bhg),
-        ]
-
-        title = 'RGB Histogram'
-
-    else:
-        data = [*hg_trace('Gray', 'gray', hg)]
-
-        title = 'Grayscale Histogram'
-
-    layout = go.Layout(
-        title=title,
-        margin=go.Margin(l=35, r=35),
-        legend=dict(x=0, y=1.15, orientation='h'),
-    )
-
-    return go.Figure(data=data, layout=layout)
 
 
 def get_average_color(x, y, image):  # pylint:disable=too-many-locals, invalid-name

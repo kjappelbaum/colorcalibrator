@@ -14,7 +14,7 @@ from flask import session
 from six.moves import range
 
 from . import dash_reusable_components as drc
-from .app import app
+from .app import __version__, app
 from .utils import (GRAPH_PLACEHOLDER, STORAGE_PLACEHOLDER, calibrate_image, flip_image, get_average_color,
                     mirror_image, plot_parity, rotate_image)
 
@@ -23,184 +23,207 @@ SESSION_ID = str(uuid.uuid4())
 
 def serve_layout():
     """create the layout"""
-    layout = html.Div([
-        # Session ID
-        html.Div(SESSION_ID, id='session-id', style={'display': 'none'}),
-        # Banner display
-        html.Div(
-            [
-                html.H2('Color calibration app', id='title'),
-            ],
-            className='banner',
-        ),
-        html.Div(
-            className='container',
-            children=[
-                html.Div([
-                    html.
-                    P('Upload your image and ensure that the black batch is in the top left corner (use the flip or rotation where needed).'
-                     ),
-                    html.
-                    P("Please make sure that there are no spotlights, this will make the color calibration fail. In case there are issues with spotlights, you will notice this in the partity plot, in which no longer all points fall on a line. If some points don't fall on a line, you can exclude those patches from the calibration."
-                     ),
-                    html.P('For now, it is limited to .jpg (which is a constrain to make debugging easier'),
-                ]),
-                html.Div(
-                    className='row',
-                    children=[
-                        html.Div(
-                            className='five columns',
-                            children=[
-                                drc.Card([
-                                    dcc.Upload(
-                                        id='upload-image',
-                                        children=[
-                                            'Drag and Drop or ',
-                                            html.A('Select an Image'),
-                                        ],
-                                        style={
-                                            'width': '100%',
-                                            'height': '50px',
-                                            'lineHeight': '50px',
-                                            'borderWidth': '1px',
-                                            'borderStyle': 'dashed',
-                                            'borderRadius': '5px',
-                                            'textAlign': 'center',
-                                        },
-                                        accept='image/*',
-                                    ),
-                                ]),
-                                drc.Card([
-                                    html.Button(
-                                        'rotate counter clockwise by 90°',
-                                        id='rotate',
-                                        style={
-                                            'margin-right': '10px',
-                                            'margin-top': '5px',
-                                        },
-                                    ),
-                                    html.Button(
-                                        'flip vertically',
-                                        id='flip',
-                                        style={
-                                            'margin-right': '10px',
-                                            'margin-top': '5px',
-                                        },
-                                    ),
-                                    html.Button(
-                                        'flip horizontally',
-                                        id='mirror',
-                                        style={
-                                            'margin-right': '10px',
-                                            'margin-top': '5px',
-                                        },
-                                    ),
-                                ]),
-                                drc.Card([
-                                    html.Label('Calibration card'),
-                                    dcc.Dropdown(
-                                        id='calibration_card',
-                                        options=[
-                                            {
-                                                'label': 'Spyderchecker 24',
-                                                'value': 'spyder24',
-                                            },
-                                        ],
-                                        value='spyder24',
-                                    ),
-                                    html.Label('Number of visible rows'),
-                                    dcc.Dropdown(
-                                        id='rows',
-                                        options=[
-                                            {
-                                                'label': '4',
-                                                'value': 4,
-                                            },
-                                            {
-                                                'label': '6',
-                                                'value': 6,
-                                            },
-                                        ],
-                                        value=4,
-                                    ),
-                                    html.Label('Number of visible columns'),
-                                    dcc.Dropdown(
-                                        id='columns',
-                                        options=[
-                                            {
-                                                'label': '4',
-                                                'value': 4,
-                                            },
-                                            {
-                                                'label': '6',
-                                                'value': 6,
-                                            },
-                                        ],
-                                        value=6,
-                                    ),
-                                    html.Label(
-                                        'Patches to exclude (you can get the numbers from the hover in the parity plot)'
-                                    ),
-                                    dcc.Dropdown(id='exclude_dropdown', multi=True),
-                                    html.Button(
-                                        'Run Calibration',
-                                        id='button-run-operation',
-                                        style={
-                                            'margin-right': '10px',
-                                            'margin-top': '5px',
-                                        },
-                                    ),
-                                    html.Button(
-                                        'Measure Color',
-                                        id='measure-operation',
-                                        style={
-                                            'margin-right': '10px',
-                                            'margin-top': '5px',
-                                        },
-                                    ),
-                                ]),
-                                drc.Card([
-                                    html.P('The average color in the selected region is'),
-                                    html.Div(id='color_res'),
-                                ]),
-                                drc.Card([
-                                    html.H4('Calibration quality'),
-                                    html.
-                                    P('Ideally, all points fall on the diagonal. If this is not the case, use the hoover tool to find the patches for which it went wrong.'
-                                     ),
-                                    dcc.Graph(
-                                        id='graph-parity',
-                                        config={'displayModeBar': False},
-                                    ),
-                                ]),
-                            ],
-                        ),
-                        html.Div(
-                            className='seven columns',
-                            style={'float': 'right'},
-                            children=[
-                                # The Interactive Image Div contains the dcc Graph
-                                # showing the image, as well as the hidden div storing
-                                # the true image
-                                html.Div(
-                                    id='div-interactive-image',
-                                    children=[
-                                        GRAPH_PLACEHOLDER,
-                                        html.Div(
-                                            id='div-storage',
-                                            children=STORAGE_PLACEHOLDER,
-                                            style={'display': 'none'},
-                                        ),
-                                    ],
-                                )
-                            ],
-                        ),
+    layout = html.Div(
+        [
+            # Session ID
+            html.Div(SESSION_ID, id='session-id', style={'display': 'none'}),
+            # Banner display
+            html.Div(
+                [
+                    html.H1('Color calibrator',
+                            id='header',
+                            style={
+                                'color': '#111',
+                                'font-family': 'sans-serif',
+                                'font-size': '64px',
+                                'font-weight': 700,
+                                'line-height': '64px',
+                                'text-align': 'center',
+                                'text-transform': ' uppercase'
+                            }),
+                ],
+                className='container',
+            ),
+            html.Div(
+                className='container',
+                children=[
+                    html.Div([
+                        html.
+                        P('Upload your image and ensure that the black batch is in the top left corner (use the flip or rotation where needed).'
+                         ),
+                        html.
+                        P("Please make sure that there are no spotlights, this will make the color calibration fail. In case there are issues with spotlights, you will notice this in the partity plot, in which no longer all points fall on a line. If some points don't fall on a line, you can exclude those patches from the calibration."
+                         ),
                     ],
-                ),
-            ],
-        ),
-        html.Div(
-            [
+                             className='lead'),
+                    html.Div(
+                        className='row',
+                        children=[
+                            html.Div(
+                                className='five columns',
+                                children=[
+                                    drc.Card([
+                                        dcc.Upload(
+                                            id='upload-image',
+                                            children=[
+                                                'Drag and Drop or ',
+                                                html.A('Select an Image'),
+                                            ],
+                                            style={
+                                                'width': '100%',
+                                                'height': '50px',
+                                                'lineHeight': '50px',
+                                                'borderWidth': '1px',
+                                                'borderStyle': 'dashed',
+                                                'borderRadius': '5px',
+                                                'textAlign': 'center',
+                                            },
+                                            accept='image/*',
+                                        ),
+                                    ]),
+                                    drc.Card([
+                                        html.Button(
+                                            'rotate 90° counterclockwise',
+                                            id='rotate',
+                                            style={
+                                                'margin-right': '10px',
+                                                'margin-top': '5px',
+                                            },
+                                        ),
+                                        html.Button(
+                                            'flip vertically',
+                                            id='flip',
+                                            style={
+                                                'margin-right': '10px',
+                                                'margin-top': '5px',
+                                            },
+                                        ),
+                                        html.Button(
+                                            'flip horizontally',
+                                            id='mirror',
+                                            style={
+                                                'margin-right': '10px',
+                                                'margin-top': '5px',
+                                            },
+                                        ),
+                                    ]),
+                                    drc.Card([
+                                        html.Label('Calibration card'),
+                                        dcc.Dropdown(
+                                            id='calibration_card',
+                                            options=[
+                                                {
+                                                    'label': 'Spyderchecker 24',
+                                                    'value': 'spyder24',
+                                                },
+                                            ],
+                                            value='spyder24',
+                                        ),
+                                        html.Label('Number of visible rows'),
+                                        dcc.Dropdown(
+                                            id='rows',
+                                            options=[
+                                                {
+                                                    'label': '4',
+                                                    'value': 4,
+                                                },
+                                                {
+                                                    'label': '6',
+                                                    'value': 6,
+                                                },
+                                            ],
+                                            value=4,
+                                        ),
+                                        html.Label('Number of visible columns'),
+                                        dcc.Dropdown(
+                                            id='columns',
+                                            options=[
+                                                {
+                                                    'label': '4',
+                                                    'value': 4,
+                                                },
+                                                {
+                                                    'label': '6',
+                                                    'value': 6,
+                                                },
+                                            ],
+                                            value=6,
+                                        ),
+                                        html.Label('Calibration algorithm'),
+                                        dcc.Dropdown(id='algorithm',
+                                                     options=[{
+                                                         'label': 'Cheung 2004',
+                                                         'value': 'cheung'
+                                                     }, {
+                                                         'label': 'Finlayson 2015',
+                                                         'value': 'finlayson'
+                                                     }, {
+                                                         'label': 'Vandermonde',
+                                                         'value': 'vandermonde'
+                                                     }],
+                                                     value='finlayson'),
+                                        html.Label(
+                                            'Patches to exclude (you can get the numbers from the hover in the parity plot)'
+                                        ),
+                                        dcc.Dropdown(id='exclude_dropdown', multi=True),
+                                        html.Button(
+                                            'Run Calibration',
+                                            id='button-run-operation',
+                                            style={
+                                                'margin-right': '10px',
+                                                'margin-top': '5px',
+                                            },
+                                        ),
+                                        html.Button(
+                                            'Measure Color',
+                                            id='measure-operation',
+                                            style={
+                                                'margin-right': '10px',
+                                                'margin-top': '5px',
+                                            },
+                                        ),
+                                    ]),
+                                    drc.Card([
+                                        html.P('The average color in the selected region is'),
+                                        html.Div(id='color_res'),
+                                    ]),
+                                    drc.Card([
+                                        html.H4('Calibration quality'),
+                                        html.
+                                        P('Ideally, all points fall on the diagonal. If this is not the case, use the hoover tool to find the patches for which it went wrong.'
+                                         ),
+                                        dcc.Graph(
+                                            id='graph-parity',
+                                            config={'displayModeBar': False},
+                                        ),
+                                    ]),
+                                ],
+                            ),
+                            html.Div(
+                                className='seven columns',
+                                style={'float': 'right'},
+                                children=[
+                                    # The Interactive Image Div contains the dcc Graph
+                                    # showing the image, as well as the hidden div storing
+                                    # the true image
+                                    html.Div(
+                                        id='div-interactive-image',
+                                        children=[
+                                            GRAPH_PLACEHOLDER,
+                                            html.Div(
+                                                id='div-storage',
+                                                children=STORAGE_PLACEHOLDER,
+                                                style={'display': 'none'},
+                                            ),
+                                        ],
+                                    )
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            html.Div([
                 html.Hr(),
                 html.Div([
                     'Built with ',
@@ -208,11 +231,11 @@ def serve_layout():
                     html.A('plantcv', href='https://plantcv.danforthcenter.org/'), '.'
                 ]),
                 html.Footer(
-                    '© Laboratory of Molecular Simulation (LSMO), École polytechnique fédérale de Lausanne (EPFL)'),
-            ],
-            className='container',
-        ),
-    ])
+                    '© Laboratory of Molecular Simulation (LSMO), École polytechnique fédérale de Lausanne (EPFL). Web app version {}'
+                    .format(__version__)),
+            ]),
+        ],
+        className='container')
     return layout
 
 
@@ -283,7 +306,7 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
             session.get('image_pil'),
         )
         return html.Div(['Red {}, green {}, blue {}'.format(int(rgb[0]), int(rgb[1]), int(rgb[2]))])
-    except Exception:
+    except Exception:  # pylint:disable=broad-except
         return html.Div([''])
 
 
@@ -305,23 +328,24 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
         State('columns', 'value'),
         State('rows', 'value'),
         State('exclude_dropdown', 'value'),
+        State('algorithm', 'value')
     ],
 )
 def update_graph_interactive_image(  # pylint:disable=too-many-arguments
-    content,
-    run_timestamp,
-    rotate_timestamp,
-    flip_timestamp,
-    mirror_timestamp,
-    selected_data,  # pylint:disable=unused-argument
-    new_filename,
-    storage,
-    session_id,  # pylint:disable=unused-argument
-    calibration_card,
-    columns,
-    rows,
-    excluded,
-):
+        content,
+        run_timestamp,
+        rotate_timestamp,
+        flip_timestamp,
+        mirror_timestamp,
+        selected_data,  # pylint:disable=unused-argument
+        new_filename,
+        storage,
+        session_id,  # pylint:disable=unused-argument
+        calibration_card,
+        columns,
+        rows,
+        excluded,
+        algorithm):
     """main callback that updates the image
     """
 
@@ -345,7 +369,9 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
         # Parse the string and convert to pil
         string = content.split(';base64,')[-1]
         im_pil = drc.b64_to_pil(string)
-        
+
+        del string
+
         session['image_pil'] = im_pil
 
         # Resets the action stack
@@ -363,7 +389,8 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
 
         # run calibration
         if (run_timestamp > rotate_timestamp and run_timestamp > flip_timestamp and run_timestamp > mirror_timestamp):
-            img, merged_df = calibrate_image(session.pop('image_pil'), rows, columns, calibration_card, excluded)
+            img, merged_df = calibrate_image(session.pop('image_pil'), rows, columns, calibration_card, excluded,
+                                             algorithm)
             session['image_pil'] = img
             storage['merged_df'] = merged_df.to_json()
 

@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import dash
 from flask_session import Session
 
+__version__ = 'v0.1-alpha'
 EXTERNAL_STYLESHEETS = [
     './assets/dash_template.css',
     './assets/fonts.css',

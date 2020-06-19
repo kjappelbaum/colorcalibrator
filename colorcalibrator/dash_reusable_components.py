@@ -39,6 +39,8 @@ def pil_to_b64(im, enc_format='png', verbose=False, **kwargs):  # pylint:disable
     im.save(buff, format=enc_format, **kwargs)
     encoded = base64.b64encode(buff.getvalue()).decode('utf-8')
 
+    del buff
+
     t_end = time.time()
     if verbose:
         print(f'PIL converted to b64 in {t_end - t_start:.3f} sec')
@@ -184,7 +186,7 @@ def InteractiveImagePIL(  # pylint: disable=invalid-name
     if enc_format == 'jpeg':
         if image.mode == 'RGBA':
             image = image.convert('RGB')
-        encoded_image = pil_to_b64(image, enc_format=enc_format, verbose=verbose, quality=80)
+        encoded_image = pil_to_b64(image, enc_format=enc_format, verbose=verbose)
     else:
         encoded_image = pil_to_b64(image, enc_format=enc_format, verbose=verbose)
 

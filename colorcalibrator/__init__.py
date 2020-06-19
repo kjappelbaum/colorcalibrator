@@ -9,12 +9,8 @@ from dash.dependencies import Input, Output, State
 from flask import session
 
 from . import layout
-from ._version import get_versions
 from .app import app, server
 from .utils import IM_PIL_PLACEHOLDER
-
-__version__ = get_versions()['version']
-del get_versions
 
 app.layout = html.Div([dcc.Location(id='url', refresh=False), html.Div(id='page-content')])
 

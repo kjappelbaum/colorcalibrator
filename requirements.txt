@@ -14,5 +14,6 @@ redis==2.10.6
 boto3==1.7.48
 requests==2.20.0
 python-dotenv==0.8.2
-plantcv==3.8.0
+plantcv>=3.8.0
 flask_session==0.3.2
+colour-science==0.3.15
