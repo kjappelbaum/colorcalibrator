@@ -398,6 +398,8 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
               rotate_timestamp > run_timestamp):
             img = drc.pil_to_b64(rotate_image(drc.b64_to_pil(session.pop('image_string'))))
             session['image_string'] = img
+        
+        del img 
 
     return [
         drc.InteractiveImagePIL(
@@ -406,7 +408,7 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
             enc_format='jpeg',
             display_mode='fixed',
             dragmode='select',
-            verbose=True,
+            verbose=False,
         ),
         html.Div(id='div-storage', children=json.dumps(storage), style={'display': 'none'}),
     ]
