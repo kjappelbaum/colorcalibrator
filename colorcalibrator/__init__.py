@@ -27,8 +27,6 @@ def display_page(pathname):
     IM_PLACEHOLDER = pil_to_b64(Image.open('./images/default.jpg'))
     session['image_string'] = IM_PLACEHOLDER
     del IM_PLACEHOLDER
-    if pathname == '/':
-        return layout.serve_layout()
 
     return layout.serve_layout()
 

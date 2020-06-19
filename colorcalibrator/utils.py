@@ -41,7 +41,7 @@ def calibrate_image(image, nrows, ncols, card, excluded=None, algorithm='finlays
     """Use plantcv to automatically calibrate the image"""
     if excluded is None:
         excluded = []
-    opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    opencv_image = cv2.cvtColor(np.array(image, dtype=np.float32), cv2.COLOR_RGB2BGR)
     _, start, space = pcv.transform.find_color_card(rgb_img=opencv_image)
     del image
     source_mask = pcv.transform.create_color_card_mask(

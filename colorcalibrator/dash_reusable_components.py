@@ -33,7 +33,6 @@ def pil_to_b64(im, enc_format='png', verbose=False, **kwargs):  # pylint:disable
     :param enc_format: The image format for displaying. If saved the image will have that extension.
     :return: base64 encoding
     """
-    t_start = time.time()
 
     buff = _BytesIO()
     im.save(buff, format=enc_format, **kwargs)
@@ -41,9 +40,6 @@ def pil_to_b64(im, enc_format='png', verbose=False, **kwargs):  # pylint:disable
 
     del buff
 
-    t_end = time.time()
-    if verbose:
-        print(f'PIL converted to b64 in {t_end - t_start:.3f} sec')
 
     return encoded
 
