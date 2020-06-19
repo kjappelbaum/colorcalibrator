@@ -40,7 +40,6 @@ def pil_to_b64(im, enc_format='png', verbose=False, **kwargs):  # pylint:disable
 
     del buff
 
-
     return encoded
 
 
