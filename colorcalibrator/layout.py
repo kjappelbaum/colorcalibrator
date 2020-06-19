@@ -380,26 +380,26 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
                                              calibration_card, excluded, algorithm)
             session['image_string'] = drc.pil_to_b64(img)
             storage['merged_df'] = merged_df.to_json()
-
+            del img
         # mirror the image
         elif (mirror_timestamp > rotate_timestamp and mirror_timestamp > flip_timestamp and
               mirror_timestamp > run_timestamp):
             img = drc.pil_to_b64(mirror_image(drc.b64_to_pil(session.pop('image_string'))))
             session['image_string'] = img
-
+            del img
         # flip the image
         elif (flip_timestamp > rotate_timestamp and flip_timestamp > mirror_timestamp and
               flip_timestamp > run_timestamp):
             img = drc.pil_to_b64(flip_image(drc.b64_to_pil(session.pop('image_string'))))
             session['image_string'] = img
-
+            del img
         # rotate the image by 90 degree
         elif (rotate_timestamp > flip_timestamp and rotate_timestamp > mirror_timestamp and
               rotate_timestamp > run_timestamp):
             img = drc.pil_to_b64(rotate_image(drc.b64_to_pil(session.pop('image_string'))))
             session['image_string'] = img
-        
-        del img 
+
+            del img
 
     return [
         drc.InteractiveImagePIL(

@@ -40,7 +40,7 @@ def array_to_pil(array):
 def calibrate_image(image, nrows, ncols, card, excluded=None, algorithm='finlayson', radius=20):  # pylint:disable=too-many-locals, too-many-arguments
     """Use plantcv to automatically calibrate the image"""
 
-    opencv_image = cv2.cvtColor(np.array(image, dtype=np.float32), cv2.COLOR_RGB2BGR)
+    opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     _, start, space = pcv.transform.find_color_card(rgb_img=opencv_image)
     del image
     source_mask = pcv.transform.create_color_card_mask(
@@ -50,7 +50,6 @@ def calibrate_image(image, nrows, ncols, card, excluded=None, algorithm='finlays
         spacing=space,
         nrows=nrows,
         ncols=ncols,
-        exclude=excluded,
     )
     _, source_matrix = pcv.transform.get_color_matrix(opencv_image, source_mask)
 

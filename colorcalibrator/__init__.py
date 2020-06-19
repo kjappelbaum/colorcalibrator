@@ -7,11 +7,11 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from flask import session
-from PIL import Image
 
 from . import layout
 from .app import app, server
 from .dash_reusable_components import pil_to_b64
+from PIL import Image
 
 app.layout = html.Div([dcc.Location(id='url', refresh=False), html.Div(id='page-content')])
 
