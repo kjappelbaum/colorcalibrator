@@ -14,11 +14,12 @@ from PIL import Image, ImageOps
 from plantcv import plantcv as pcv
 from plotly.subplots import make_subplots
 from six.moves import map, range
+from . import dash_reusable_components as drc
 
 # [filename, image_signature, action_stack]
 STORAGE_PLACEHOLDER = json.dumps({'filename': None, 'image_signature': None, 'action_stack': []})
 
-IM_PIL_PLACEHOLDER = Image.open('./images/default.jpg')
+IM_PLACEHOLDER = drc.pil_to_b64(Image.open('./images/default.jpg'))
 
 GRAPH_PLACEHOLDER = dcc.Graph(id='interactive-image', style={'height': '80vh'})
 

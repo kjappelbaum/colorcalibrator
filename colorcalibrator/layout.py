@@ -18,15 +18,11 @@ from .app import __version__, app
 from .utils import (GRAPH_PLACEHOLDER, STORAGE_PLACEHOLDER, calibrate_image, flip_image, get_average_color,
                     mirror_image, plot_parity, rotate_image)
 
-SESSION_ID = str(uuid.uuid4())
-
 
 def serve_layout():
     """create the layout"""
     layout = html.Div(
         [
-            # Session ID
-            html.Div(SESSION_ID, id='session-id', style={'display': 'none'}),
             # Banner display
             html.Div(
                 [
@@ -323,7 +319,6 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
         State('interactive-image', 'selectedData'),
         State('upload-image', 'filename'),
         State('div-storage', 'children'),
-        State('session-id', 'children'),
         State('calibration_card', 'value'),
         State('columns', 'value'),
         State('rows', 'value'),
@@ -340,7 +335,6 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
         selected_data,  # pylint:disable=unused-argument
         new_filename,
         storage,
-        session_id,  # pylint:disable=unused-argument
         calibration_card,
         columns,
         rows,
@@ -368,15 +362,10 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
 
         # Parse the string and convert to pil
         string = content.split(';base64,')[-1]
-        im_pil = drc.b64_to_pil(string)
+        #im_pil = drc.b64_to_pil(string)
+        session['image_string'] = string
 
         del string
-
-        session['image_pil'] = im_pil
-
-        # Resets the action stack
-        storage['action_stack'] = []
-        storage['merged_df'] = None
 
     # we want to run colorcalibration as name wasn't changed
     else:
@@ -389,33 +378,33 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
 
         # run calibration
         if (run_timestamp > rotate_timestamp and run_timestamp > flip_timestamp and run_timestamp > mirror_timestamp):
-            img, merged_df = calibrate_image(session.pop('image_pil'), rows, columns, calibration_card, excluded,
-                                             algorithm)
-            session['image_pil'] = img
+            img, merged_df = calibrate_image(drc.b64_to_pil(session.pop('image_string')), rows, columns,
+                                             calibration_card, excluded, algorithm)
+            session['image_string'] = drc.pil_to_b64(img)
             storage['merged_df'] = merged_df.to_json()
 
         # mirror the image
         elif (mirror_timestamp > rotate_timestamp and mirror_timestamp > flip_timestamp and
               mirror_timestamp > run_timestamp):
-            img = mirror_image(session.pop('image_pil'))
-            session['image_pil'] = img
+            img = drc.pil_to_b64(mirror_image(drc.b64_to_pil(session.pop('image_string'))))
+            session['image_string'] = img
 
         # flip the image
         elif (flip_timestamp > rotate_timestamp and flip_timestamp > mirror_timestamp and
               flip_timestamp > run_timestamp):
-            img = flip_image(session.pop('image_pil'))
-            session['image_pil'] = img
+            img = drc.pil_to_b64(flip_image(drc.b64_to_pil(session.pop('image_string'))))
+            session['image_string'] = img
 
         # rotate the image by 90 degree
         elif (rotate_timestamp > flip_timestamp and rotate_timestamp > mirror_timestamp and
               rotate_timestamp > run_timestamp):
-            img = rotate_image(session.pop('image_pil'))
-            session['image_pil'] = img
+            img = drc.pil_to_b64(rotate_image(drc.b64_to_pil(session.pop('image_string'))))
+            session['image_string'] = img
 
     return [
         drc.InteractiveImagePIL(
             image_id='interactive-image',
-            image=session.get('image_pil'),
+            image=drc.b64_to_pil(session.get('image_string')),
             enc_format='jpeg',
             display_mode='fixed',
             dragmode='select',

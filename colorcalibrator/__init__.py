@@ -10,7 +10,7 @@ from flask import session
 
 from . import layout
 from .app import app, server
-from .utils import IM_PIL_PLACEHOLDER
+from .utils import IM_PLACEHOLDER
 
 app.layout = html.Div([dcc.Location(id='url', refresh=False), html.Div(id='page-content')])
 
@@ -22,9 +22,7 @@ app.layout = html.Div([dcc.Location(id='url', refresh=False), html.Div(id='page-
 def display_page(pathname):
     """Display the layout as function of the url"""
     session.clear()
-    session['image_pil'] = IM_PIL_PLACEHOLDER
-
-    app.logger.info('Pathname is {}'.format(pathname))
+    session['image_string'] = IM_PLACEHOLDER
     if pathname == '/':
         return layout.serve_layout()
 
