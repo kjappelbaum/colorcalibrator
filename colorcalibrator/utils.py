@@ -14,6 +14,7 @@ from PIL import Image, ImageOps
 from plantcv import plantcv as pcv
 from plotly.subplots import make_subplots
 from six.moves import map, range
+
 from . import dash_reusable_components as drc
 
 # [filename, image_signature, action_stack]
@@ -44,7 +45,7 @@ def calibrate_image(image, nrows, ncols, card, excluded=None, algorithm='finlays
         excluded = []
     opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
     _, start, space = pcv.transform.find_color_card(rgb_img=opencv_image)
-
+    del image
     source_mask = pcv.transform.create_color_card_mask(
         opencv_image,
         radius=radius,
@@ -78,8 +79,9 @@ def calibrate_image(image, nrows, ncols, card, excluded=None, algorithm='finlays
         reference = np.delete(reference, excluded, axis=0)
 
     corrected_img[:] = colour.colour_correction(opencv_image[:], source_matrix[:, 1:], reference, algorithm_)
-
+    del opencv_image
     _, corrected_matrix = pcv.transform.get_color_matrix(corrected_img, source_mask)
+    del source_mask
     target_matrix = corrected_matrix.copy()
     target_matrix[:, 1:] = TARGET_SPYDER24
 
@@ -89,6 +91,7 @@ def calibrate_image(image, nrows, ncols, card, excluded=None, algorithm='finlays
 
     img = cv2.cvtColor(corrected_img, cv2.COLOR_BGR2RGB)
     im_pil = Image.fromarray(img)
+    del img
 
     df_sm = pd.DataFrame(corrected_matrix, columns=['label', 'r', 'g', 'b'])
     df_tm = pd.DataFrame(target_matrix, columns=['label', 'r', 'g', 'b'])

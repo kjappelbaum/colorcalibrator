@@ -4,7 +4,6 @@
 from __future__ import absolute_import, print_function
 
 import json
-import uuid
 
 import dash_core_components as dcc
 import dash_html_components as html
@@ -50,8 +49,7 @@ def serve_layout():
                         html.
                         P("Please make sure that there are no spotlights, this will make the color calibration fail. In case there are issues with spotlights, you will notice this in the partity plot, in which no longer all points fall on a line. If some points don't fall on a line, you can exclude those patches from the calibration."
                          ),
-                    ],
-                             className='lead'),
+                    ],),
                     html.Div(
                         className='row',
                         children=[

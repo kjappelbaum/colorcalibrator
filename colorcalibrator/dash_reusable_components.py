@@ -64,6 +64,8 @@ def numpy_to_b64(np_array, enc_format='png', scalar=True, **kwargs):  # pylint:d
 
     im_pil = Image.fromarray(np_array)
 
+    del np_array
+
     return pil_to_b64(im_pil, enc_format, **kwargs)
 
 
@@ -71,7 +73,9 @@ def b64_to_pil(string):
     """Bytes to pillow image"""
     decoded = base64.b64decode(string)
     buffer = _BytesIO(decoded)
+    del string
     im = Image.open(buffer)  # pylint:disable=invalid-name
+    del buffer
 
     return im
 
