@@ -20,8 +20,6 @@ from . import dash_reusable_components as drc
 # [filename, image_signature, action_stack]
 STORAGE_PLACEHOLDER = json.dumps({'filename': None, 'image_signature': None, 'action_stack': []})
 
-IM_PLACEHOLDER = drc.pil_to_b64(Image.open('./images/default.jpg'))
-
 GRAPH_PLACEHOLDER = dcc.Graph(id='interactive-image', style={'height': '80vh'})
 
 TARGET_SPYDER24 = np.array([[43, 41, 43], [80, 80, 78], [122, 118, 116], [161, 157, 14], [202, 198, 195],
