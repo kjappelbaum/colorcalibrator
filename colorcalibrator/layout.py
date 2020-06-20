@@ -4,7 +4,6 @@
 from __future__ import absolute_import, print_function
 
 import json
-import traceback
 
 import dash_core_components as dcc
 import dash_html_components as html
@@ -304,8 +303,7 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
         )
 
         return html.Div(['Red {}, green {}, blue {}'.format(int(rgb[0]), int(rgb[1]), int(rgb[2]))])
-    except Exception as e:  # pylint:disable=broad-except
-        print(e, traceback.print_stack())
+    except Exception:  # pylint:disable=broad-except
         return html.Div([''])
 
 
@@ -405,7 +403,7 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
 
             del img
 
-    if storage['image_string'] == '':
+    if storage['image_string'] == '':  # pylint:disable=no-else-return
         return [
             drc.InteractiveImagePIL(
                 image_id='interactive-image',

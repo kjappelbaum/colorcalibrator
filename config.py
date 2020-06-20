@@ -2,10 +2,9 @@
 """App configuration."""
 from __future__ import absolute_import
 
-import os
 from os import environ
 
-import redis
+# import redis
 
 
 class Config:  # pylint:disable=too-few-public-methods
@@ -17,5 +16,5 @@ class Config:  # pylint:disable=too-few-public-methods
     FLASK_ENV = environ.get('FLASK_ENV')
 
     # Flask-Session
-    SESSION_TYPE = 'redis'  # there is some issue with images getting to large for the heroku redis
-    SESSION_REDIS = redis.from_url(os.environ.get('REDIS_URL', 'redis://localhost:6379'))
+    # SESSION_TYPE = 'redis'  # there is some issue with images getting to large for the heroku redis
+    # # SESSION_REDIS = redis.from_url(os.environ.get('REDIS_URL', 'redis://localhost:6379'))
