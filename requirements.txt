@@ -16,3 +16,4 @@ python-dotenv==0.13.0
 plantcv>=3.8.0
 flask_session==0.3.2
 colour-science==0.3.15
+json-logging-py

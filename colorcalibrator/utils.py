@@ -18,7 +18,7 @@ from six.moves import map, range
 pcv.params.debug = None
 
 # [filename, image_signature, action_stack]
-STORAGE_PLACEHOLDER = json.dumps({'filename': None, 'image_signature': None, 'action_stack': []})
+STORAGE_PLACEHOLDER = json.dumps({'filename': None, 'image_signature': None, 'action_stack': [], 'image_string': ''})
 
 GRAPH_PLACEHOLDER = dcc.Graph(id='interactive-image', style={'height': '80vh'})
 

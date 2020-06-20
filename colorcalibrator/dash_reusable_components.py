@@ -182,70 +182,93 @@ def InteractiveImagePIL(  # pylint: disable=invalid-name
     **kwargs,
 ):
     """Copied from the image editor example from dash"""
-    if enc_format == 'jpeg':
-        if image.mode == 'RGBA':
-            image = image.convert('RGB')
-        encoded_image = pil_to_b64(image, enc_format=enc_format, verbose=verbose)
-    else:
-        encoded_image = pil_to_b64(image, enc_format=enc_format, verbose=verbose)
+    if image is not None:
+        if enc_format == 'jpeg':
+            if image.mode == 'RGBA':
+                image = image.convert('RGB')
+            encoded_image = pil_to_b64(image, enc_format=enc_format, verbose=verbose)
+        else:
+            encoded_image = pil_to_b64(image, enc_format=enc_format, verbose=verbose)
 
-    width, height = image.size
+        width, height = image.size
 
-    if display_mode.lower() in ['scalable', 'scale']:
-        display_height = '{}vw'.format(round(60 * height / width))
-    else:
-        display_height = '80vh'
+        if display_mode.lower() in ['scalable', 'scale']:
+            display_height = '{}vw'.format(round(60 * height / width))
+        else:
+            display_height = '80vh'
 
-    return dcc.Graph(
-        id=image_id,
-        figure={
-            'data': [],
-            'layout': {
-                'margin': go.Margin(l=40, b=40, t=26, r=10),
-                'xaxis': {
-                    'range': (0, width),
-                    'scaleanchor': 'y',
-                    'scaleratio': 1,
-                    'showgrid': False,
-                    'visible': False,
-                    'zeroline': False,
+        return dcc.Graph(
+            id=image_id,
+            figure={
+                'data': [],
+                'layout': {
+                    'margin': go.Margin(l=40, b=40, t=26, r=10),
+                    'xaxis': {
+                        'range': (0, width),
+                        'scaleanchor': 'y',
+                        'scaleratio': 1,
+                        'showgrid': False,
+                        'visible': False,
+                        'zeroline': False,
+                    },
+                    'yaxis': {
+                        'range': (0, height),
+                        'showgrid': False,
+                        'visible': False
+                    },
+                    'images': [{
+                        'xref': 'x',
+                        'yref': 'y',
+                        'x': 0,
+                        'y': 0,
+                        'yanchor': 'bottom',
+                        'sizing': 'stretch',
+                        'sizex': width,
+                        'sizey': height,
+                        'layer': 'below',
+                        'source': HTML_IMG_SRC_PARAMETERS + encoded_image,
+                    }],
+                    'dragmode': dragmode,
                 },
-                'yaxis': {
-                    'range': (0, height),
-                    'showgrid': False,
-                    'visible': False
-                },
-                'images': [{
-                    'xref': 'x',
-                    'yref': 'y',
-                    'x': 0,
-                    'y': 0,
-                    'yanchor': 'bottom',
-                    'sizing': 'stretch',
-                    'sizex': width,
-                    'sizey': height,
-                    'layer': 'below',
-                    'source': HTML_IMG_SRC_PARAMETERS + encoded_image,
-                }],
-                'dragmode': dragmode,
             },
-        },
-        style=_merge({
-            'height': display_height,
-            'width': '100%'
-        }, kwargs.get('style', {})),
-        config={
-            'modeBarButtonsToRemove': [
-                'sendDataToCloud',
-                'autoScale2d',
-                'toggleSpikelines',
-                'hoverClosestCartesian',
-                'hoverCompareCartesian',
-                'zoom2d',
-            ]
-        },
-        **_omit(['style'], kwargs),
-    )
+            style=_merge({
+                'height': display_height,
+                'width': '100%'
+            }, kwargs.get('style', {})),
+            config={
+                'modeBarButtonsToRemove': [
+                    'sendDataToCloud',
+                    'autoScale2d',
+                    'toggleSpikelines',
+                    'hoverClosestCartesian',
+                    'hoverCompareCartesian',
+                    'zoom2d',
+                ]
+            },
+            **_omit(['style'], kwargs),
+        )
+    else:
+        return dcc.Graph(
+            id=image_id,
+            figure={
+                'data': [],
+                'layout': {
+                    'margin': go.Margin(l=40, b=40, t=26, r=10),
+                    'dragmode': dragmode,
+                },
+            },
+            config={
+                'modeBarButtonsToRemove': [
+                    'sendDataToCloud',
+                    'autoScale2d',
+                    'toggleSpikelines',
+                    'hoverClosestCartesian',
+                    'hoverCompareCartesian',
+                    'zoom2d',
+                ]
+            },
+            **_omit(['style'], kwargs),
+        )
 
 
 def DisplayImagePIL(id, image, **kwargs):  # pylint:disable=redefined-builtin, invalid-name

@@ -11,7 +11,8 @@ from flask import session
 from . import layout
 from .app import app, server
 from .dash_reusable_components import pil_to_b64
-from PIL import Image
+
+# from PIL import Image
 
 app.layout = html.Div([dcc.Location(id='url', refresh=False), html.Div(id='page-content')])
 
@@ -22,10 +23,10 @@ app.layout = html.Div([dcc.Location(id='url', refresh=False), html.Div(id='page-
 )
 def display_page(pathname):
     """Display the layout as function of the url"""
-    session.clear()
-    IM_PLACEHOLDER = pil_to_b64(Image.open('./images/default.jpg'))
-    session['image_string'] = IM_PLACEHOLDER
-    del IM_PLACEHOLDER
+    # session.clear()
+    # IM_PLACEHOLDER = pil_to_b64(Image.open('./images/default.jpg'))
+    # session['image_string'] = IM_PLACEHOLDER
+    # del IM_PLACEHOLDER
 
     return layout.serve_layout()
 

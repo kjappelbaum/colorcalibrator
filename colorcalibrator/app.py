@@ -3,7 +3,8 @@
 from __future__ import absolute_import
 
 import dash
-from flask_session import Session
+
+# from flask_session import Session
 
 __version__ = 'v0.1-alpha'
 EXTERNAL_STYLESHEETS = [
@@ -13,7 +14,7 @@ EXTERNAL_STYLESHEETS = [
     './assets/font-awesome.min.css',
 ]
 
-sess = Session()  # pylint:disable=invalid-name
+# sess = Session()  # pylint:disable=invalid-name
 
 app = dash.Dash(  # pylint:disable=invalid-name
     __name__,
@@ -41,4 +42,4 @@ app.title = 'colorcalibrator'
 
 server.config.from_object('config.Config')
 
-sess.init_app(server)
+# sess.init_app(server)

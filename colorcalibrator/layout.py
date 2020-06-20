@@ -4,12 +4,12 @@
 from __future__ import absolute_import, print_function
 
 import json
+import traceback
 
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 from dash.dependencies import Input, Output, State
-from flask import session
 from six.moves import range
 
 from . import dash_reusable_components as drc
@@ -293,14 +293,19 @@ def update_exlude_options(rows, columns):
 )
 def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argument
     """Print the result of the RGB measurement"""
+
+    storage = json.loads(storage)
+    print('the stored image string is {}'.format(storage['image_string']))
     try:
         rgb = get_average_color(
             selected_data['range']['x'],
             selected_data['range']['y'],
-            session.get('image_pil'),
+            drc.b64_to_pil(storage['image_string']),
         )
+
         return html.Div(['Red {}, green {}, blue {}'.format(int(rgb[0]), int(rgb[1]), int(rgb[2]))])
-    except Exception:  # pylint:disable=broad-except
+    except Exception as e:  # pylint:disable=broad-except
+        print(e, traceback.print_stack())
         return html.Div([''])
 
 
@@ -353,7 +358,6 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
     # If a new file was uploaded (new file name changed)
     if new_filename and new_filename != filename:
         # Replace filename
-        session.clear()
 
         # Update the storage dict
         storage['filename'] = new_filename
@@ -361,7 +365,7 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
         # Parse the string and convert to pil
         string = content.split(';base64,')[-1]
         #im_pil = drc.b64_to_pil(string)
-        session['image_string'] = string
+        storage['image_string'] = string
 
         del string
 
@@ -376,39 +380,52 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
 
         # run calibration
         if (run_timestamp > rotate_timestamp and run_timestamp > flip_timestamp and run_timestamp > mirror_timestamp):
-            img, merged_df = calibrate_image(drc.b64_to_pil(session.pop('image_string')), rows, columns,
-                                             calibration_card, excluded, algorithm)
-            session['image_string'] = drc.pil_to_b64(img)
+            img, merged_df = calibrate_image(drc.b64_to_pil(storage['image_string']), rows, columns, calibration_card,
+                                             excluded, algorithm)
+            storage['image_string'] = drc.pil_to_b64(img)
             storage['merged_df'] = merged_df.to_json()
             del img
         # mirror the image
         elif (mirror_timestamp > rotate_timestamp and mirror_timestamp > flip_timestamp and
               mirror_timestamp > run_timestamp):
-            img = drc.pil_to_b64(mirror_image(drc.b64_to_pil(session.pop('image_string'))))
-            session['image_string'] = img
+            img = drc.pil_to_b64(mirror_image(drc.b64_to_pil(storage['image_string'])))
+            storage['image_string'] = img
             del img
         # flip the image
         elif (flip_timestamp > rotate_timestamp and flip_timestamp > mirror_timestamp and
               flip_timestamp > run_timestamp):
-            img = drc.pil_to_b64(flip_image(drc.b64_to_pil(session.pop('image_string'))))
-            session['image_string'] = img
+            img = drc.pil_to_b64(flip_image(drc.b64_to_pil(storage['image_string'])))
+            storage['image_string'] = img
             del img
         # rotate the image by 90 degree
         elif (rotate_timestamp > flip_timestamp and rotate_timestamp > mirror_timestamp and
               rotate_timestamp > run_timestamp):
-            img = drc.pil_to_b64(rotate_image(drc.b64_to_pil(session.pop('image_string'))))
-            session['image_string'] = img
+            img = drc.pil_to_b64(rotate_image(drc.b64_to_pil(storage['image_string'])))
+            storage['image_string'] = img
 
             del img
 
-    return [
-        drc.InteractiveImagePIL(
-            image_id='interactive-image',
-            image=drc.b64_to_pil(session.get('image_string')),
-            enc_format='jpeg',
-            display_mode='fixed',
-            dragmode='select',
-            verbose=False,
-        ),
-        html.Div(id='div-storage', children=json.dumps(storage), style={'display': 'none'}),
-    ]
+    if storage['image_string'] == '':
+        return [
+            drc.InteractiveImagePIL(
+                image_id='interactive-image',
+                image=None,
+                enc_format='jpeg',
+                display_mode='fixed',
+                dragmode='select',
+                verbose=False,
+            ),
+            html.Div(id='div-storage', children=json.dumps(storage), style={'display': 'none'}),
+        ]
+    else:
+        return [
+            drc.InteractiveImagePIL(
+                image_id='interactive-image',
+                image=drc.b64_to_pil(storage['image_string']),
+                enc_format='jpeg',
+                display_mode='fixed',
+                dragmode='select',
+                verbose=False,
+            ),
+            html.Div(id='div-storage', children=json.dumps(storage), style={'display': 'none'}),
+        ]
