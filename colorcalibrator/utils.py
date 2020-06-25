@@ -5,28 +5,47 @@ from __future__ import absolute_import, print_function
 import json
 
 import colour
-import cv2
 import dash_core_components as dcc
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from colour_checker_detection import detect_colour_checkers_segmentation
 from PIL import Image, ImageOps
-from plantcv import plantcv as pcv
 from plotly.subplots import make_subplots
 from six.moves import map, range
-
-pcv.params.debug = None
 
 # [filename, image_signature, action_stack]
 STORAGE_PLACEHOLDER = json.dumps({'filename': None, 'image_signature': None, 'action_stack': [], 'image_string': ''})
 
 GRAPH_PLACEHOLDER = dcc.Graph(id='interactive-image', style={'height': '80vh'})
 
-TARGET_SPYDER24 = np.array([[43, 41, 43], [80, 80, 78], [122, 118, 116], [161, 157, 14], [202, 198, 195],
-                            [249, 242, 238], [25, 55, 135], [57, 146, 64], [186, 26, 51], [245, 205, 0], [192, 75, 145],
-                            [0, 127, 159], [238, 158, 25], [157, 188, 54], [83, 58, 106], [195, 79, 95], [58, 88, 159],
-                            [222, 118, 32], [112, 76, 60], [197, 145, 125], [87, 120, 155], [82, 106, 60],
-                            [126, 125, 174], [98, 187, 166]])
+# https://www.datacolor.com/wp-content/uploads/2018/01/SpyderCheckr_Color_Data_V2.pdf
+TARGET_SPYDER24 = np.array([
+    [43, 41, 43],  # 6E
+    [80, 80, 78],  # 5E
+    [122, 118, 116],  # 4E
+    [161, 157, 154],  # 3E
+    [202, 198, 195],  # 2E
+    [249, 242, 238],  # 1E
+    [25, 55, 135],  # 6F
+    [57, 146, 64],  # 5F
+    [186, 26, 51],  # 4F
+    [245, 205, 0],  # 3F
+    [192, 75, 145],  # 2F
+    [0, 127, 159],  # 1F
+    [238, 158, 25],  # 6G
+    [157, 188, 54],  # 5G
+    [83, 58, 106],  # 4G
+    [195, 79, 95],  # 3G
+    [58, 88, 159],  # 2G
+    [222, 118, 32],  # 1G
+    [112, 76, 60],  # 6H
+    [197, 145, 125],  # 5H
+    [87, 120, 155],  # 4H
+    [82, 106, 60],  # 3H
+    [126, 125, 174],  # 2H
+    [98, 187, 166]  # 1H
+]) / 255
 
 
 def pil_to_array(pil):
@@ -37,28 +56,22 @@ def array_to_pil(array):
     return Image.fromarray(array)
 
 
-def calibrate_image(image, nrows, ncols, card, excluded=None, algorithm='finlayson', radius=20):  # pylint:disable=too-many-locals, too-many-arguments
+def calibrate_image(image, card, excluded=None, algorithm='finlayson'):  # pylint:disable=too-many-locals, too-many-arguments
     """Use plantcv to automatically calibrate the image"""
-
-    opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    _, start, space = pcv.transform.find_color_card(rgb_img=opencv_image)
-    del image
-    source_mask = pcv.transform.create_color_card_mask(
-        opencv_image,
-        radius=radius,
-        start_coord=start,
-        spacing=space,
-        nrows=nrows,
-        ncols=ncols,
-    )
-    _, source_matrix = pcv.transform.get_color_matrix(opencv_image, source_mask)
-
     if card == 'spyder24':
         reference = TARGET_SPYDER24
     else:
         raise NotImplementedError
 
-    corrected_img = opencv_image.copy()
+    linear_image = colour.cctf_decoding(image)  # decode to linear RGB
+
+    swatches = detect_colour_checkers_segmentation(linear_image)[0][::-1]  # black first
+
+    # neutralization (white balance) based on # 3E
+    im = linear_image / swatches[3]  # pylint:disable=invalid-name
+    im *= colour.cctf_decoding(reference[3])  # pylint:disable=invalid-name
+
+    swatches_wb = detect_colour_checkers_segmentation(im)[0][::-1]  # black first
 
     if algorithm == 'finlayson':
         algorithm_ = 'Finlayson 2015'
@@ -71,25 +84,26 @@ def calibrate_image(image, nrows, ncols, card, excluded=None, algorithm='finlays
         algorithm_ = 'Finlayson 2015'
 
     if isinstance(excluded, list):
-        source_matrix = np.delete(source_matrix, excluded, axis=0)
+        swatches_wb = np.delete(swatches_wb, excluded, axis=0)
         reference = np.delete(reference, excluded, axis=0)
 
-    corrected_img[:] = colour.colour_correction(opencv_image[:], source_matrix[:, 1:], reference, algorithm_)
-    del opencv_image
-    _, corrected_matrix = pcv.transform.get_color_matrix(corrected_img, source_mask)
-    del source_mask
-    target_matrix = corrected_matrix.copy()
-    target_matrix[:, 1:] = TARGET_SPYDER24
+    im_cal_linear = colour.colour_correction(im, swatches_wb, colour.cctf_decoding(reference), method=algorithm_)
 
-    label = np.arange(0, len(target_matrix))
-    corrected_matrix[:, 0] = label
+    im_cal_non_linear = colour.cctf_encoding(im_cal_linear)
+    im_pil = Image.fromarray((np.clip(im_cal_non_linear, 0, 1) * 255).astype(np.uint8))
+    swatches_calibrated = detect_colour_checkers_segmentation(im_cal_non_linear)[0][::-1]
+
+    label = np.arange(0, len(swatches_wb))
+    target_matrix = np.zeros((len(label), 4))
+    measured_matrix = np.zeros((len(label), 4))
+
     target_matrix[:, 0] = label
+    measured_matrix[:, 0] = label
 
-    img = cv2.cvtColor(corrected_img, cv2.COLOR_BGR2RGB)
-    im_pil = Image.fromarray(img)
-    del img
+    measured_matrix[:, 1:] = swatches_calibrated
+    target_matrix[:, 1:] = reference
 
-    df_sm = pd.DataFrame(corrected_matrix, columns=['label', 'r', 'g', 'b'])
+    df_sm = pd.DataFrame(measured_matrix, columns=['label', 'r', 'g', 'b'])
     df_tm = pd.DataFrame(target_matrix, columns=['label', 'r', 'g', 'b'])
 
     merged_df = pd.merge(df_sm, df_tm, left_on='label', right_on='label', suffixes=('_source', '_target'))

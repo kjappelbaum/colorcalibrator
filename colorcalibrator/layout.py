@@ -112,36 +112,6 @@ def serve_layout():
                                             ],
                                             value='spyder24',
                                         ),
-                                        html.Label('Number of visible rows'),
-                                        dcc.Dropdown(
-                                            id='rows',
-                                            options=[
-                                                {
-                                                    'label': '4',
-                                                    'value': 4,
-                                                },
-                                                {
-                                                    'label': '6',
-                                                    'value': 6,
-                                                },
-                                            ],
-                                            value=4,
-                                        ),
-                                        html.Label('Number of visible columns'),
-                                        dcc.Dropdown(
-                                            id='columns',
-                                            options=[
-                                                {
-                                                    'label': '4',
-                                                    'value': 4,
-                                                },
-                                                {
-                                                    'label': '6',
-                                                    'value': 6,
-                                                },
-                                            ],
-                                            value=6,
-                                        ),
                                         html.Label('Calibration algorithm'),
                                         dcc.Dropdown(id='algorithm',
                                                      options=[{
@@ -221,7 +191,7 @@ def serve_layout():
                 html.Div([
                     'Built with ',
                     html.A('Dash', href='https://plotly.com/dash/'), ' and ',
-                    html.A('plantcv', href='https://plantcv.danforthcenter.org/'), '.'
+                    html.A('colour', href='colour-science.org'), '.'
                 ]),
                 html.Footer(
                     '© Laboratory of Molecular Simulation (LSMO), École polytechnique fédérale de Lausanne (EPFL). Web app version {}'
@@ -275,12 +245,12 @@ def update_histogram(_, storage):
 
 @app.callback(
     Output('exclude_dropdown', 'options'),
-    [Input('columns', 'value'), Input('rows', 'value')],
+    [Input('calibration_card', 'value')],
 )
-def update_exlude_options(rows, columns):
+def update_exlude_options(calibration_card):
     """Dropdown for exclude is dynamic as function of the selected number of rows and columns"""
-    total_columns = rows * columns
-    options = [{'label': str(v), 'value': v} for v in range(1, total_columns)]
+    if calibration_card == 'spyder24':
+        options = [{'label': str(v), 'value': v} for v in range(0, 23)]
     return options
 
 
@@ -321,8 +291,6 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
         State('upload-image', 'filename'),
         State('div-storage', 'children'),
         State('calibration_card', 'value'),
-        State('columns', 'value'),
-        State('rows', 'value'),
         State('exclude_dropdown', 'value'),
         State('algorithm', 'value')
     ],
@@ -337,8 +305,6 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
         new_filename,
         storage,
         calibration_card,
-        columns,
-        rows,
         excluded,
         algorithm):
     """main callback that updates the image
@@ -378,8 +344,8 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
 
         # run calibration
         if (run_timestamp > rotate_timestamp and run_timestamp > flip_timestamp and run_timestamp > mirror_timestamp):
-            img, merged_df = calibrate_image(drc.b64_to_pil(storage['image_string']), rows, columns, calibration_card,
-                                             excluded, algorithm)
+            img, merged_df = calibrate_image(drc.b64_to_numpy(storage['image_string']), calibration_card, excluded,
+                                             algorithm)
             storage['image_string'] = drc.pil_to_b64(img)
             storage['merged_df'] = merged_df.to_json()
             del img
