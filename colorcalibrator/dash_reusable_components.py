@@ -82,7 +82,7 @@ def b64_to_numpy(string, to_scalar=True):
     del im
 
     if to_scalar:
-        np_array /= 255.0
+        np_array = np_array / 255.0
 
     return np_array
 
