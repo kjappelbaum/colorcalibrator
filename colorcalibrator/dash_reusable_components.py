@@ -78,10 +78,11 @@ def b64_to_pil(string):
 def b64_to_numpy(string, to_scalar=True):
     """Convert bytes to numpy array"""
     im = b64_to_pil(string)  # pylint:disable=invalid-name
-    np_array = np.asarray(im)
+    np_array = np.array(im)
+    del im
 
     if to_scalar:
-        np_array = np_array / 255.0
+        np_array /= 255.0
 
     return np_array
 
