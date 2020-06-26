@@ -44,11 +44,11 @@ def serve_layout():
                 children=[
                     html.Div([
                         html.
-                        P('Upload your image and ensure that the black batch is in the top left corner (use the flip or rotation where needed).'
-                         ),
+                        P('Upload your image and ensure that the black batch is in the top left corner (use the flip or rotation where needed).',
+                          style={'font-size': '1.5rem'}),
                         html.
-                        P("Please make sure that there are no spotlights, this will make the color calibration fail. In case there are issues with spotlights, you will notice this in the partity plot, in which no longer all points fall on a line. If some points don't fall on a line, you can exclude those patches from the calibration."
-                         ),
+                        P("Please make sure that there are no spotlights, this will make the color calibration fail. In case there are issues with spotlights, you will notice this in the partity plot, in which no longer all points fall on a line. If some points don't fall on a line, you can exclude those patches from the calibration.",
+                          style={'font-size': '1.5rem'}),
                     ],),
                     html.Div(
                         className='row',
@@ -361,6 +361,8 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
                     dismissable=True,
                     style={'font-size': '1.5rem'})
                 app.logger.error('Could not calibrate image due to {}'.format(e))  # pylint:disable=logging-format-interpolation
+            else:
+                app.logger.info('Calibration successfull')
 
         # mirror the image
         elif (mirror_timestamp > rotate_timestamp and mirror_timestamp > flip_timestamp and
@@ -382,6 +384,7 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
 
             del img
 
+    app.logger.info('Returning now')
     if storage['image_string'] == '':  # pylint:disable=no-else-return
         return [
             drc.InteractiveImagePIL(

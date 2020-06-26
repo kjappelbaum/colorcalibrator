@@ -67,52 +67,57 @@ def calibrate_image(image, card, excluded=None, algorithm='finlayson'):  # pylin
 
     try:
         swatches = detect_colour_checkers_segmentation(linear_image)[0][::-1]  # black first
+
+        # neutralization (white balance) based on # 3E
+        im = linear_image / swatches[3]  # pylint:disable=invalid-name
+        im *= colour.cctf_decoding(reference[3])  # pylint:disable=invalid-name
+
+        del linear_image
+        del swatches
+
+        swatches_wb = detect_colour_checkers_segmentation(im)[0][::-1]  # black first
+
+        if algorithm == 'finlayson':
+            algorithm_ = 'Finlayson 2015'
+        elif algorithm == 'cheung':
+            algorithm_ = 'Cheung 2004'
+        elif algorithm == 'vandermonde':
+            algorithm_ = 'Vandermonde'
+        else:
+            # log this case
+            algorithm_ = 'Finlayson 2015'
+
+        if isinstance(excluded, list):
+            swatches_wb = np.delete(swatches_wb, excluded, axis=0)
+            reference = np.delete(reference, excluded, axis=0)
+
+        im_cal_linear = colour.colour_correction(im, swatches_wb, colour.cctf_decoding(reference), method=algorithm_)
+
+        im_cal_non_linear = colour.cctf_encoding(im_cal_linear)
+        del im_cal_linear
+        im_pil = Image.fromarray((np.clip(im_cal_non_linear, 0, 1) * 255).astype(np.uint8))
+        swatches_calibrated = detect_colour_checkers_segmentation(im_cal_non_linear)[0][::-1]
+        del im_cal_non_linear
+        label = np.arange(0, len(swatches_wb))
+        target_matrix = np.zeros((len(label), 4))
+        measured_matrix = np.zeros((len(label), 4))
+        del swatches_wb
+
+        target_matrix[:, 0] = label
+        measured_matrix[:, 0] = label
+
+        measured_matrix[:, 1:] = swatches_calibrated
+        target_matrix[:, 1:] = reference
+
+        df_sm = pd.DataFrame(measured_matrix, columns=['label', 'r', 'g', 'b'])
+        df_tm = pd.DataFrame(target_matrix, columns=['label', 'r', 'g', 'b'])
+
+        merged_df = pd.merge(df_sm, df_tm, left_on='label', right_on='label', suffixes=('_source', '_target'))
+        merged_df['label'] = merged_df['label']
+
+        return im_pil, merged_df
     except Exception as e:  # pylint:disable=invalid-name
         raise ValueError(e)
-
-    # neutralization (white balance) based on # 3E
-    im = linear_image / swatches[3]  # pylint:disable=invalid-name
-    im *= colour.cctf_decoding(reference[3])  # pylint:disable=invalid-name
-
-    swatches_wb = detect_colour_checkers_segmentation(im)[0][::-1]  # black first
-
-    if algorithm == 'finlayson':
-        algorithm_ = 'Finlayson 2015'
-    elif algorithm == 'cheung':
-        algorithm_ = 'Cheung 2004'
-    elif algorithm == 'vandermonde':
-        algorithm_ = 'Vandermonde'
-    else:
-        # log this case
-        algorithm_ = 'Finlayson 2015'
-
-    if isinstance(excluded, list):
-        swatches_wb = np.delete(swatches_wb, excluded, axis=0)
-        reference = np.delete(reference, excluded, axis=0)
-
-    im_cal_linear = colour.colour_correction(im, swatches_wb, colour.cctf_decoding(reference), method=algorithm_)
-
-    im_cal_non_linear = colour.cctf_encoding(im_cal_linear)
-    im_pil = Image.fromarray((np.clip(im_cal_non_linear, 0, 1) * 255).astype(np.uint8))
-    swatches_calibrated = detect_colour_checkers_segmentation(im_cal_non_linear)[0][::-1]
-
-    label = np.arange(0, len(swatches_wb))
-    target_matrix = np.zeros((len(label), 4))
-    measured_matrix = np.zeros((len(label), 4))
-
-    target_matrix[:, 0] = label
-    measured_matrix[:, 0] = label
-
-    measured_matrix[:, 1:] = swatches_calibrated
-    target_matrix[:, 1:] = reference
-
-    df_sm = pd.DataFrame(measured_matrix, columns=['label', 'r', 'g', 'b'])
-    df_tm = pd.DataFrame(target_matrix, columns=['label', 'r', 'g', 'b'])
-
-    merged_df = pd.merge(df_sm, df_tm, left_on='label', right_on='label', suffixes=('_source', '_target'))
-    merged_df['label'] = merged_df['label']
-
-    return im_pil, merged_df
 
 
 def plot_parity(merged_df):

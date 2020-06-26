@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build --no-cache -t colorcal .
+docker build -t colorcal .
