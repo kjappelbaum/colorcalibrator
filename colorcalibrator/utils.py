@@ -57,7 +57,7 @@ def array_to_pil(array):
 
 
 def calibrate_image(image, card, excluded=None, algorithm='finlayson'):  # pylint:disable=too-many-locals, too-many-arguments
-    """Use plantcv to automatically calibrate the image"""
+    """Use colour to automatically calibrate the image"""
     if card == 'spyder24':
         reference = TARGET_SPYDER24
     else:
@@ -65,7 +65,10 @@ def calibrate_image(image, card, excluded=None, algorithm='finlayson'):  # pylin
 
     linear_image = colour.cctf_decoding(image)  # decode to linear RGB
 
-    swatches = detect_colour_checkers_segmentation(linear_image)[0][::-1]  # black first
+    try:
+        swatches = detect_colour_checkers_segmentation(linear_image)[0][::-1]  # black first
+    except Exception as e:  # pylint:disable=invalid-name
+        raise ValueError(e)
 
     # neutralization (white balance) based on # 3E
     im = linear_image / swatches[3]  # pylint:disable=invalid-name

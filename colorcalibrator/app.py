@@ -3,15 +3,14 @@
 from __future__ import absolute_import
 
 import dash
+import dash_bootstrap_components as dbc
 
 # from flask_session import Session
 
 __version__ = 'v0.1-alpha'
 EXTERNAL_STYLESHEETS = [
-    './assets/dash_template.css',
-    './assets/fonts.css',
-    './assets/normalize.min.css',
-    './assets/font-awesome.min.css',
+    './assets/dash_template.css', './assets/fonts.css', './assets/normalize.min.css', './assets/font-awesome.min.css',
+    dbc.themes.BOOTSTRAP
 ]
 
 # sess = Session()  # pylint:disable=invalid-name

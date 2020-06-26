@@ -5,6 +5,7 @@ from __future__ import absolute_import, print_function
 
 import json
 
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
@@ -169,6 +170,7 @@ def serve_layout():
                                     # The Interactive Image Div contains the dcc Graph
                                     # showing the image, as well as the hidden div storing
                                     # the true image
+                                    html.Div(id='error'),
                                     html.Div(
                                         id='div-interactive-image',
                                         children=[
@@ -179,7 +181,7 @@ def serve_layout():
                                                 style={'display': 'none'},
                                             ),
                                         ],
-                                    )
+                                    ),
                                 ],
                             ),
                         ],
@@ -278,7 +280,8 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
 
 
 @app.callback(
-    Output('div-interactive-image', 'children'),
+    [Output('div-interactive-image', 'children'),
+     Output('error', 'children')],
     [
         Input('upload-image', 'contents'),
         Input('button-run-operation', 'n_clicks_timestamp'),
@@ -318,6 +321,7 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
     # # Runs the undo function if the undo button was clicked. Storage stays
     # # the same otherwise.
     # storage = undo_last_action(undo_clicks, storage)
+    error_out = html.Div()
 
     # If a new file was uploaded (new file name changed)
     if new_filename and new_filename != filename:
@@ -344,11 +348,20 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
 
         # run calibration
         if (run_timestamp > rotate_timestamp and run_timestamp > flip_timestamp and run_timestamp > mirror_timestamp):
-            img, merged_df = calibrate_image(drc.b64_to_numpy(storage['image_string']), calibration_card, excluded,
-                                             algorithm)
-            storage['image_string'] = drc.pil_to_b64(img)
-            storage['merged_df'] = merged_df.to_json()
-            del img
+            try:
+                img, merged_df = calibrate_image(drc.b64_to_numpy(storage['image_string']), calibration_card, excluded,
+                                                 algorithm)
+                storage['image_string'] = drc.pil_to_b64(img)
+                storage['merged_df'] = merged_df.to_json()
+                del img
+            except Exception as e:  # pylint:disable=broad-except, invalid-name
+                error_out = dbc.Alert(
+                    'Could not calibrate image, maybe the detection of the color card failed. Try a different image.',
+                    color='primary',
+                    dismissable=True,
+                    style={'font-size': '1.5rem'})
+                app.logger.error('Could not calibrate image due to {}'.format(e))  # pylint:disable=logging-format-interpolation
+
         # mirror the image
         elif (mirror_timestamp > rotate_timestamp and mirror_timestamp > flip_timestamp and
               mirror_timestamp > run_timestamp):
@@ -380,7 +393,7 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
                 verbose=False,
             ),
             html.Div(id='div-storage', children=json.dumps(storage), style={'display': 'none'}),
-        ]
+        ], error_out
     else:
         return [
             drc.InteractiveImagePIL(
@@ -392,4 +405,4 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
                 verbose=False,
             ),
             html.Div(id='div-storage', children=json.dumps(storage), style={'display': 'none'}),
-        ]
+        ], error_out
