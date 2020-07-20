@@ -3,7 +3,6 @@
 from __future__ import absolute_import, print_function
 
 import base64
-import time
 from io import BytesIO as _BytesIO
 
 import dash_core_components as dcc
@@ -26,7 +25,7 @@ def _omit(omitted_keys, d):  # pylint:disable=invalid-name
 
 
 # Image utility functions
-def pil_to_b64(im, enc_format='png', verbose=False, **kwargs):  # pylint:disable=invalid-name
+def pil_to_b64(im, enc_format='png', **kwargs):  # pylint:disable=invalid-name
     """
     Converts a PIL Image into base64 string for HTML displaying
     :param im: PIL Image object
@@ -183,7 +182,7 @@ def InteractiveImagePIL(  # pylint: disable=invalid-name
     **kwargs,
 ):
     """Copied from the image editor example from dash"""
-    if image is not None:
+    if image is not None:  # pylint:disable=no-else-return
         if enc_format == 'jpeg':
             if image.mode == 'RGBA':
                 image = image.convert('RGB')
@@ -244,7 +243,11 @@ def InteractiveImagePIL(  # pylint: disable=invalid-name
                     'hoverClosestCartesian',
                     'hoverCompareCartesian',
                     'zoom2d',
-                ]
+                ],
+                'modeBarButtonsToAdd': ['select2d', 'select', 'pan2d'],
+                'scrollZoom': True,
+                'displaylogo': True,
+                'doubleClick': 'reset'
             },
             **_omit(['style'], kwargs),
         )
@@ -266,7 +269,11 @@ def InteractiveImagePIL(  # pylint: disable=invalid-name
                     'hoverClosestCartesian',
                     'hoverCompareCartesian',
                     'zoom2d',
-                ]
+                ],
+                'modeBarButtonsToAdd': ['select2d', 'select', 'pan2d'],
+                'scrollZoom': True,
+                'displaylogo': True,
+                'doubleClick': 'reset'
             },
             **_omit(['style'], kwargs),
         )

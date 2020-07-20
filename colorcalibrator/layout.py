@@ -43,13 +43,16 @@ def serve_layout():
                 className='container',
                 children=[
                     html.Div([
-                        html.
-                        P('Upload your image and ensure that the black batch is in the top left corner (use the flip or rotation where needed).',
-                          style={'font-size': '1.5rem'}),
-                        html.
-                        P("Please make sure that there are no spotlights, this will make the color calibration fail. In case there are issues with spotlights, you will notice this in the partity plot, in which no longer all points fall on a line. If some points don't fall on a line, you can exclude those patches from the calibration.",
-                          style={'font-size': '1.5rem'}),
-                    ],),
+                        html.Ol([
+                            html.H4('Workflow'),
+                            html.
+                            Li('Upload image, rotate if needed (black batch in the top left corner and the white one in the top right corner).'
+                              ),
+                            html.Li('Cick on "Run calibration"'),
+                            html.Li('Use mouswheel to zoom, select a rectangle with your substance.'),
+                            html.Li('Click on "Measure color"')
+                        ])
+                    ]),
                     html.Div(
                         className='row',
                         children=[
@@ -186,6 +189,14 @@ def serve_layout():
                             ),
                         ],
                     ),
+                    html.Div([
+                        html.
+                        P('Upload your image and ensure that the black batch is in the top left corner and the white one in the top right corner (use the flip or rotation where needed).',
+                          style={'font-size': '1.5rem'}),
+                        html.
+                        P("Please make sure that there are no spotlights, this will make the color calibration fail. In case there are issues with spotlights, you will notice this in the partity plot, in which no longer all points fall on a line. If some points don't fall on a line, you can try to exclude those patches from the calibration. If your whitepoint is completely off, you'll get better results if you perform a manual whitepoint correction (e.g. on the third gray patch) before you use this app.",
+                          style={'font-size': '1.5rem'}),
+                    ]),
                 ],
             ),
             html.Div([
@@ -266,7 +277,7 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
     """Print the result of the RGB measurement"""
 
     storage = json.loads(storage)
-    print('the stored image string is {}'.format(storage['image_string']))
+
     try:
         rgb = get_average_color(
             selected_data['range']['x'],
