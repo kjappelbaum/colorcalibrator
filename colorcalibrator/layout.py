@@ -46,7 +46,7 @@ def serve_layout():
                         html.Ol([
                             html.H4('Workflow'),
                             html.
-                            Li('Upload image (please use files smaller than 2MB), rotate if needed (black batch in the top left corner and the white one in the top right corner).'
+                            Li('Upload image (please use files smaller than 1MB), rotate if needed (black batch in the top left corner and the white one in the top right corner).'
                               ),  # this limit only applies to the deployments
                             html.Li('Cick on "Run calibration"'),
                             html.Li('Use mouswheel to zoom, select a rectangle with your substance.'),
