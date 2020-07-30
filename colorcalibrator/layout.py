@@ -14,8 +14,8 @@ from six.moves import range
 
 from . import dash_reusable_components as drc
 from .app import __version__, app
-from .utils import (GRAPH_PLACEHOLDER, STORAGE_PLACEHOLDER, calibrate_image, flip_image, get_average_color,
-                    mirror_image, plot_parity, rotate_image)
+from .utils import (GRAPH_PLACEHOLDER, STORAGE_PLACEHOLDER, calibrate_image, closest_name, flip_image,
+                    get_average_color, mirror_image, plot_parity, rotate_image)
 
 
 def serve_layout():
@@ -285,7 +285,10 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
             drc.b64_to_pil(storage['image_string']),
         )
 
-        return html.Div(['Red {}, green {}, blue {}'.format(int(rgb[0]), int(rgb[1]), int(rgb[2]))])
+        return html.Div([
+            'Red {}, green {}, blue {}. Closest name from the xkcd survey is {}.'.format(
+                int(rgb[0]), int(rgb[1]), int(rgb[2]), closest_name(rgb))
+        ])
     except Exception:  # pylint:disable=broad-except
         return html.Div([''])
 
