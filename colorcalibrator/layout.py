@@ -286,8 +286,8 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
         )
 
         return html.Div([
-            'Red {}, green {}, blue {}. Closest name from the xkcd survey is {}.'.format(
-                int(rgb[0]), int(rgb[1]), int(rgb[2]), closest_name(rgb))
+            'Red {}, green {}, blue {} (standard deviation {} {} {}). Closest name from the xkcd survey is {}.'.format(
+                int(rgb[0]), int(rgb[1]), int(rgb[2]), int(rgb[3]), int(rgb[4]), int(rgb[5]), closest_name(rgb))
         ])
     except Exception:  # pylint:disable=broad-except
         return html.Div([''])

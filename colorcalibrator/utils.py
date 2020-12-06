@@ -1168,20 +1168,18 @@ def get_average_color(x, y, image):  # pylint:disable=too-many-locals, invalid-n
     y_1 = max([lower, upper])
 
     # ugly because numpy somehow flips the axis
-    reds = 0
-    greens = 0
-    blues = 0
-    counter = 0
+    reds = []
+    greens = []
+    blues = []
 
     for i in range(x_0, x_1):
         for j in range(y_0, y_1):
             red, green, blue = image.getpixel((i, j))
-            reds += red
-            greens += green
-            blues += blue
+            reds.append(red)
+            greens.append(green)
+            blues.append(blue)
 
-            counter += 1
-    return reds / counter, greens / counter, blues / counter
+    return np.mean(reds), np.mean(greens), np.mean(blues), np.std(reds), np.std(greens), np.std(blues)
 
 
 def rotate_image(image):
