@@ -14,12 +14,14 @@ from .dash_reusable_components import pil_to_b64
 
 # from PIL import Image
 
-app.layout = html.Div([dcc.Location(id='url', refresh=False), html.Div(id='page-content')])
+app.layout = html.Div(
+    [dcc.Location(id="url", refresh=False), html.Div(id="page-content")]
+)
 
 
 @app.callback(
-    Output('page-content', 'children'),
-    [Input('url', 'pathname')],
+    Output("page-content", "children"),
+    [Input("url", "pathname")],
 )
 def display_page(_):
     """Display the layout as function of the url"""
@@ -31,5 +33,5 @@ def display_page(_):
     return layout.serve_layout()
 
 
-if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0')
+if __name__ == "__main__":
+    app.run_server(debug=True, host="0.0.0.0")

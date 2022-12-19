@@ -12,7 +12,7 @@ import plotly.graph_objs as go
 from PIL import Image
 
 # Variables
-HTML_IMG_SRC_PARAMETERS = 'data:image/png;base64, '
+HTML_IMG_SRC_PARAMETERS = "data:image/png;base64, "
 
 
 # Display utility functions
@@ -25,7 +25,7 @@ def _omit(omitted_keys, d):  # pylint:disable=invalid-name
 
 
 # Image utility functions
-def pil_to_b64(im, enc_format='png', **kwargs):  # pylint:disable=invalid-name
+def pil_to_b64(im, enc_format="png", **kwargs):  # pylint:disable=invalid-name
     """
     Converts a PIL Image into base64 string for HTML displaying
     :param im: PIL Image object
@@ -35,14 +35,16 @@ def pil_to_b64(im, enc_format='png', **kwargs):  # pylint:disable=invalid-name
 
     buff = _BytesIO()
     im.save(buff, format=enc_format, **kwargs)
-    encoded = base64.b64encode(buff.getvalue()).decode('utf-8')
+    encoded = base64.b64encode(buff.getvalue()).decode("utf-8")
 
     del buff
 
     return encoded
 
 
-def numpy_to_b64(np_array, enc_format='png', scalar=True, **kwargs):  # pylint:disable=invalid-name
+def numpy_to_b64(
+    np_array, enc_format="png", scalar=True, **kwargs
+):  # pylint:disable=invalid-name
     """
     Converts a numpy image into base 64 string for HTML displaying
     :param np_array:
@@ -108,12 +110,12 @@ def pil_to_bytes_string(im):  # pylint: disable=invalid-name
     size = im.size
     mode = im.mode
     im_bytes = im.tobytes()
-    encoding_string = base64.b64encode(im_bytes).decode('ascii')
+    encoding_string = base64.b64encode(im_bytes).decode("ascii")
 
     return encoding_string, size, mode
 
 
-def bytes_string_to_pil(encoding_string, size, mode='RGB'):
+def bytes_string_to_pil(encoding_string, size, mode="RGB"):
     """
     Converts the ASCII string representation of a PIL Image bytes into the original PIL Image object. This
     function is only recommended for its speed, and takes more space than any encoding. The following are
@@ -139,9 +141,11 @@ def bytes_string_to_pil(encoding_string, size, mode='RGB'):
         size = eval(size)  # pylint:disable=eval-used
 
     if not isinstance(size, (tuple, list)):
-        raise ValueError('Incorrect Size type when trying to convert from bytes to PIL Image.')
+        raise ValueError(
+            "Incorrect Size type when trying to convert from bytes to PIL Image."
+        )
 
-    encoding_bytes = encoding_string.encode('ascii')
+    encoding_bytes = encoding_string.encode("ascii")
     decoded = base64.b64decode(encoding_bytes)
 
     im = Image.frombytes(mode, size, decoded)  # pylint:disable=invalid-name
@@ -155,19 +159,19 @@ def Card(children, **kwargs):  # pylint: disable=invalid-name
         children,
         style=_merge(
             {
-                'padding': 20,
-                'margin': 5,
-                'borderRadius': 5,
-                'border': 'thin lightgrey solid',
+                "padding": 20,
+                "margin": 5,
+                "borderRadius": 5,
+                "border": "thin lightgrey solid",
                 # Remove possibility to select the text for better UX
-                'user-select': 'none',
-                '-moz-user-select': 'none',
-                '-webkit-user-select': 'none',
-                '-ms-user-select': 'none',
+                "user-select": "none",
+                "-moz-user-select": "none",
+                "-webkit-user-select": "none",
+                "-ms-user-select": "none",
             },
-            kwargs.get('style', {}),
+            kwargs.get("style", {}),
         ),
-        **_omit(['style'], kwargs),
+        **_omit(["style"], kwargs),
     )
 
 
@@ -175,120 +179,125 @@ def Card(children, **kwargs):  # pylint: disable=invalid-name
 def InteractiveImagePIL(  # pylint: disable=invalid-name
     image_id,
     image,
-    enc_format='png',
-    display_mode='fixed',
-    dragmode='select',
+    enc_format="png",
+    display_mode="fixed",
+    dragmode="select",
     verbose=False,
     **kwargs,
 ):
     """Copied from the image editor example from dash"""
     if image is not None:  # pylint:disable=no-else-return
-        if enc_format == 'jpeg':
-            if image.mode == 'RGBA':
-                image = image.convert('RGB')
+        if enc_format == "jpeg":
+            if image.mode == "RGBA":
+                image = image.convert("RGB")
             encoded_image = pil_to_b64(image, enc_format=enc_format, verbose=verbose)
         else:
             encoded_image = pil_to_b64(image, enc_format=enc_format, verbose=verbose)
 
         width, height = image.size
 
-        if display_mode.lower() in ['scalable', 'scale']:
-            display_height = '{}vw'.format(round(60 * height / width))
+        if display_mode.lower() in ["scalable", "scale"]:
+            display_height = "{}vw".format(round(60 * height / width))
         else:
-            display_height = '80vh'
+            display_height = "80vh"
 
         return dcc.Graph(
             id=image_id,
             figure={
-                'data': [],
-                'layout': {
-                    'margin': go.Margin(l=40, b=40, t=26, r=10),
-                    'xaxis': {
-                        'range': (0, width),
-                        'scaleanchor': 'y',
-                        'scaleratio': 1,
-                        'showgrid': False,
-                        'visible': False,
-                        'zeroline': False,
+                "data": [],
+                "layout": {
+                    "margin": go.Margin(l=40, b=40, t=26, r=10),
+                    "xaxis": {
+                        "range": (0, width),
+                        "scaleanchor": "y",
+                        "scaleratio": 1,
+                        "showgrid": False,
+                        "visible": False,
+                        "zeroline": False,
                     },
-                    'yaxis': {
-                        'range': (0, height),
-                        'showgrid': False,
-                        'visible': False
+                    "yaxis": {
+                        "range": (0, height),
+                        "showgrid": False,
+                        "visible": False,
                     },
-                    'images': [{
-                        'xref': 'x',
-                        'yref': 'y',
-                        'x': 0,
-                        'y': 0,
-                        'yanchor': 'bottom',
-                        'sizing': 'stretch',
-                        'sizex': width,
-                        'sizey': height,
-                        'layer': 'below',
-                        'source': HTML_IMG_SRC_PARAMETERS + encoded_image,
-                    }],
-                    'dragmode': dragmode,
+                    "images": [
+                        {
+                            "xref": "x",
+                            "yref": "y",
+                            "x": 0,
+                            "y": 0,
+                            "yanchor": "bottom",
+                            "sizing": "stretch",
+                            "sizex": width,
+                            "sizey": height,
+                            "layer": "below",
+                            "source": HTML_IMG_SRC_PARAMETERS + encoded_image,
+                        }
+                    ],
+                    "dragmode": dragmode,
                 },
             },
-            style=_merge({
-                'height': display_height,
-                'width': '100%'
-            }, kwargs.get('style', {})),
+            style=_merge(
+                {"height": display_height, "width": "100%"}, kwargs.get("style", {})
+            ),
             config={
-                'modeBarButtonsToRemove': [
-                    'sendDataToCloud',
-                    'autoScale2d',
-                    'toggleSpikelines',
-                    'hoverClosestCartesian',
-                    'hoverCompareCartesian',
-                    'zoom2d',
+                "modeBarButtonsToRemove": [
+                    "sendDataToCloud",
+                    "autoScale2d",
+                    "toggleSpikelines",
+                    "hoverClosestCartesian",
+                    "hoverCompareCartesian",
+                    "zoom2d",
                 ],
-                'modeBarButtonsToAdd': ['select2d', 'select', 'pan2d'],
-                'scrollZoom': True,
-                'displaylogo': True,
-                'doubleClick': 'reset'
+                "modeBarButtonsToAdd": ["select2d", "select", "pan2d"],
+                "scrollZoom": True,
+                "displaylogo": True,
+                "doubleClick": "reset",
             },
-            **_omit(['style'], kwargs),
+            **_omit(["style"], kwargs),
         )
     else:
         return dcc.Graph(
             id=image_id,
             figure={
-                'data': [],
-                'layout': {
-                    'margin': go.Margin(l=40, b=40, t=26, r=10),
-                    'dragmode': dragmode,
+                "data": [],
+                "layout": {
+                    "margin": go.Margin(l=40, b=40, t=26, r=10),
+                    "dragmode": dragmode,
                 },
             },
             config={
-                'modeBarButtonsToRemove': [
-                    'sendDataToCloud',
-                    'autoScale2d',
-                    'toggleSpikelines',
-                    'hoverClosestCartesian',
-                    'hoverCompareCartesian',
-                    'zoom2d',
+                "modeBarButtonsToRemove": [
+                    "sendDataToCloud",
+                    "autoScale2d",
+                    "toggleSpikelines",
+                    "hoverClosestCartesian",
+                    "hoverCompareCartesian",
+                    "zoom2d",
                 ],
-                'modeBarButtonsToAdd': ['select2d', 'select', 'pan2d'],
-                'scrollZoom': True,
-                'displaylogo': True,
-                'doubleClick': 'reset'
+                "modeBarButtonsToAdd": ["select2d", "select", "pan2d"],
+                "scrollZoom": True,
+                "displaylogo": True,
+                "doubleClick": "reset",
             },
-            **_omit(['style'], kwargs),
+            **_omit(["style"], kwargs),
         )
 
 
-def DisplayImagePIL(id, image, **kwargs):  # pylint:disable=redefined-builtin, invalid-name
-    encoded_image = pil_to_b64(image, enc_format='png')
+def DisplayImagePIL(
+    id, image, **kwargs
+):  # pylint:disable=redefined-builtin, invalid-name
+    encoded_image = pil_to_b64(image, enc_format="png")
 
     return html.Img(
-        id=f'img-{id}',
+        id=f"img-{id}",
         src=HTML_IMG_SRC_PARAMETERS + encoded_image,
-        width='100%',
+        width="100%",
         **kwargs,
     )
 
 
 def CustomDropdown(**kwargs):  # pylint: disable=invalid-name
-    return html.Div(dcc.Dropdown(**kwargs), style={'margin-top': '5px', 'margin-bottom': '5px'})
+    return html.Div(
+        dcc.Dropdown(**kwargs), style={"margin-top": "5px", "margin-bottom": "5px"}
+    )
