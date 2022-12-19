@@ -3,7 +3,7 @@ dash-html-components==1.1.1
 dash-core-components==1.14.1
 dash-bootstrap-components==0.11.1
 dash-renderer==1.6.0
-numpy==1.19.1
+numpy==1.19.4
 pandas==1.2.0
 plotly==4.9.0
 flask==1.1.2
