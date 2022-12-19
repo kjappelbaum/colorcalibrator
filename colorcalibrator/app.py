@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Setting up the app"""
-from __future__ import absolute_import
-
 import dash
 import dash_bootstrap_components as dbc
 

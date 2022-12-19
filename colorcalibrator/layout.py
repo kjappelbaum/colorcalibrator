@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint:disable=line-too-long
 """Setting up the layout and the main callbacks"""
-from __future__ import absolute_import, print_function
 
 import json
 

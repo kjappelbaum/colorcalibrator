@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """Many parts copied from the image processing example app"""
-from __future__ import absolute_import, print_function
-
 import base64
 from io import BytesIO as _BytesIO
 

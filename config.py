@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 """App configuration."""
-from __future__ import absolute_import
-
 from os import environ
 
-# import redis
-
-
-class Config:  # pylint:disable=too-few-public-methods
+class Config: 
     """Set Flask configuration vars from .env file."""
 
     # General Config
