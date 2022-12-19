@@ -8,7 +8,9 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 from dash.dependencies import Input, Output, State
-from six.moves import range
+from dash import dash_table
+from loguru import logger
+import numpy as np
 
 from . import dash_reusable_components as drc
 from .app import __version__, app
@@ -57,7 +59,7 @@ def serve_layout():
                                 [
                                     html.H4("Workflow"),
                                     html.Li(
-                                        "Upload image (please use files smaller than 1MB), rotate if needed (black batch in the top left corner and the white one in the top right corner)."
+                                        "Upload image (please use files smaller than 1MB), rotate if needed (black patch in the top left corner and the white one in the top right corner)."
                                     ),  # this limit only applies to the deployments
                                     html.Li('Cick on "Run calibration"'),
                                     html.Li(
@@ -161,6 +163,11 @@ def serve_layout():
                                             dcc.Dropdown(
                                                 id="exclude_dropdown", multi=True
                                             ),
+                                            dcc.Checklist(
+                                                ["Only Whitepoint"],
+                                                ["Only Whitepoint"],
+                                                id="only_whitepoint",
+                                            ),
                                             html.Button(
                                                 "Run Calibration",
                                                 id="button-run-operation",
@@ -233,6 +240,20 @@ def serve_layout():
                             html.P(
                                 "Please make sure that there are no spotlights, this will make the color calibration fail. In case there are issues with spotlights, you will notice this in the partity plot, in which no longer all points fall on a line. If some points don't fall on a line, you can try to exclude those patches from the calibration. If your whitepoint is completely off, you'll get better results if you perform a manual whitepoint correction (e.g. on the third gray patch) before you use this app.",
                                 style={"font-size": "1.5rem"},
+                            ),
+                            html.Hr(),
+                            html.Div(
+                                [
+                                    html.H4("Measured colors"),
+                                    dash_table.DataTable(
+                                        data=[{"R": np.nan, "G": np.nan, "B": np.nan}],
+                                        # optional - sets the order of columns
+                                        # columns=["R", "G", "B"],
+                                        editable=True,
+                                        id="table",
+                                        export_format="csv",
+                                    ),
+                                ]
                             ),
                         ]
                     ),
@@ -320,37 +341,46 @@ def update_exlude_options(calibration_card):
 
 
 @app.callback(
-    Output("color_res", "children"),
-    [Input("measure-operation", "n_clicks")],
-    [State("interactive-image", "selectedData"), State("div-storage", "children")],
+    [Output("color_res", "children"), Output("table", "data")],
+    [Input("measure-operation", "n_clicks"), Input("table", "row_update")],
+    [
+        State("interactive-image", "selectedData"),
+        State("div-storage", "children"),
+    ],
 )
-def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argument
+def update_rgb_result(
+    _, table, selected_data, storage
+):  # pylint:disable=unused-argument
     """Print the result of the RGB measurement"""
-
     storage = json.loads(storage)
 
     try:
-        rgb = get_average_color(
+        rgb, data = get_average_color(
             selected_data["range"]["x"],
             selected_data["range"]["y"],
             drc.b64_to_pil(storage["image_string"]),
         )
 
-        return html.Div(
-            [
-                "Red {}, green {}, blue {} (standard deviation {} {} {}). Closest name from the xkcd survey is {}.".format(
-                    int(rgb[0]),
-                    int(rgb[1]),
-                    int(rgb[2]),
-                    int(rgb[3]),
-                    int(rgb[4]),
-                    int(rgb[5]),
-                    closest_name(rgb),
-                )
-            ]
-        )
-    except Exception:  # pylint:disable=broad-except
-        return html.Div([""])
+        return [
+            html.Div(
+                [
+                    "Red {}, green {}, blue {} (standard deviation {} {} {}). Closest name from the xkcd survey is {}.".format(
+                        int(rgb[0]),
+                        int(rgb[1]),
+                        int(rgb[2]),
+                        int(rgb[3]),
+                        int(rgb[4]),
+                        int(rgb[5]),
+                        closest_name(rgb),
+                    )
+                ]
+            ),
+            data,
+        ]
+
+    except Exception as e:  # pylint:disable=broad-except
+        logger.exception(e)
+        return [html.Div([""]), [{"R": np.nan, "G": np.nan, "B": np.nan}]]
 
 
 @app.callback(
@@ -369,6 +399,7 @@ def update_rgb_result(_, selected_data, storage):  # pylint:disable=unused-argum
         State("calibration_card", "value"),
         State("exclude_dropdown", "value"),
         State("algorithm", "value"),
+        State("only_whitepoint", "value"),
     ],
 )
 def update_graph_interactive_image(  # pylint:disable=too-many-arguments
@@ -383,9 +414,9 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
     calibration_card,
     excluded,
     algorithm,
+    only_whitepoint,
 ):
     """main callback that updates the image"""
-
     # Retrieve information saved in storage, which is a dict containing
     # information about the image and its action stack
     storage = json.loads(storage)
@@ -431,11 +462,13 @@ def update_graph_interactive_image(  # pylint:disable=too-many-arguments
                     calibration_card,
                     excluded,
                     algorithm,
+                    len(only_whitepoint) > 0,
                 )
                 storage["image_string"] = drc.pil_to_b64(img)
                 storage["merged_df"] = merged_df.to_json()
                 del img
             except Exception as e:  # pylint:disable=broad-except, invalid-name
+                logger.exception("Could not calibrate image due to {}".format(e))
                 error_out = dbc.Alert(
                     "Could not calibrate image, maybe the detection of the color card failed. Try a different image.",
                     color="primary",
