@@ -20,3 +20,5 @@ The use of the app has been reported in
 ```
 
 The calibration currently assumes [TARGET_SPYDER24](https://www.datacolor.com/wp-content/uploads/2018/01/SpyderCheckr_Color_Data_V2.pdf) calibration cards.
+
+The app is also deployed on https://colorcalibrator.matcloud.xyz/.

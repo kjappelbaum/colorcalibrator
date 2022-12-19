@@ -13,7 +13,16 @@ from colormath.color_objects import LabColor, sRGBColor
 from colour_checker_detection import detect_colour_checkers_segmentation
 from PIL import Image, ImageOps
 from plotly.subplots import make_subplots
-from six.moves import map, range
+from loguru import logger
+
+import numpy
+
+
+def patch_asscalar(a):
+    return a.item()
+
+
+setattr(numpy, "asscalar", patch_asscalar)
 
 # [filename, image_signature, action_stack]
 STORAGE_PLACEHOLDER = json.dumps(
@@ -1043,7 +1052,7 @@ def array_to_pil(array):
 
 
 def calibrate_image(
-    image, card, excluded=None, algorithm="finlayson"
+    image, card, excluded=None, algorithm="finlayson", only_white_point=True
 ):  # pylint:disable=too-many-locals, too-many-arguments
     """Use colour to automatically calibrate the image"""
     if card == "spyder24":
@@ -1065,57 +1074,78 @@ def calibrate_image(
         del linear_image
         del swatches
 
-        swatches_wb = detect_colour_checkers_segmentation(im)[0][::-1]  # black first
+        if not only_white_point:
+            swatches_wb = detect_colour_checkers_segmentation(im)[
+                0
+            ]  # [::-1]  # black first
+            if algorithm == "finlayson":
+                algorithm_ = "Finlayson 2015"
+            elif algorithm == "cheung":
+                algorithm_ = "Cheung 2004"
+            elif algorithm == "vandermonde":
+                algorithm_ = "Vandermonde"
+            else:
+                # log this case
+                algorithm_ = "Finlayson 2015"
 
-        if algorithm == "finlayson":
-            algorithm_ = "Finlayson 2015"
-        elif algorithm == "cheung":
-            algorithm_ = "Cheung 2004"
-        elif algorithm == "vandermonde":
-            algorithm_ = "Vandermonde"
+            if isinstance(excluded, list):
+                swatches_wb = np.delete(swatches_wb, excluded, axis=0)
+                reference = np.delete(reference, excluded, axis=0)
+
+            im_cal_linear = colour.colour_correction(
+                im, swatches_wb, colour.cctf_decoding(reference), method=algorithm_
+            )
+
+            im_cal_non_linear = colour.cctf_encoding(im_cal_linear)
+            del im_cal_linear
+            im_pil = Image.fromarray(
+                (np.clip(im_cal_non_linear, 0, 1) * 255).astype(np.uint8)
+            )
         else:
-            # log this case
-            algorithm_ = "Finlayson 2015"
+            im = colour.cctf_encoding(im)
+            im_cal_non_linear = im
+            im_pil = Image.fromarray((np.clip(im, 0, 1) * 255).astype(np.uint8))
 
-        if isinstance(excluded, list):
-            swatches_wb = np.delete(swatches_wb, excluded, axis=0)
-            reference = np.delete(reference, excluded, axis=0)
+        try:
+            swatches_calibrated = detect_colour_checkers_segmentation(
+                im_cal_non_linear
+            )[0][::-1]
+            del im_cal_non_linear
+            label = np.arange(0, len(swatches_wb))
+            target_matrix = np.zeros((len(label), 4))
+            measured_matrix = np.zeros((len(label), 4))
+            del swatches_wb
 
-        im_cal_linear = colour.colour_correction(
-            im, swatches_wb, colour.cctf_decoding(reference), method=algorithm_
-        )
+            target_matrix[:, 0] = label
+            measured_matrix[:, 0] = label
 
-        im_cal_non_linear = colour.cctf_encoding(im_cal_linear)
-        del im_cal_linear
-        im_pil = Image.fromarray(
-            (np.clip(im_cal_non_linear, 0, 1) * 255).astype(np.uint8)
-        )
-        swatches_calibrated = detect_colour_checkers_segmentation(im_cal_non_linear)[0][
-            ::-1
-        ]
-        del im_cal_non_linear
-        label = np.arange(0, len(swatches_wb))
-        target_matrix = np.zeros((len(label), 4))
-        measured_matrix = np.zeros((len(label), 4))
-        del swatches_wb
+            measured_matrix[:, 1:] = swatches_calibrated
+            target_matrix[:, 1:] = reference
 
-        target_matrix[:, 0] = label
-        measured_matrix[:, 0] = label
+            df_sm = pd.DataFrame(measured_matrix, columns=["label", "r", "g", "b"])
+            df_tm = pd.DataFrame(target_matrix, columns=["label", "r", "g", "b"])
 
-        measured_matrix[:, 1:] = swatches_calibrated
-        target_matrix[:, 1:] = reference
-
-        df_sm = pd.DataFrame(measured_matrix, columns=["label", "r", "g", "b"])
-        df_tm = pd.DataFrame(target_matrix, columns=["label", "r", "g", "b"])
-
-        merged_df = pd.merge(
-            df_sm,
-            df_tm,
-            left_on="label",
-            right_on="label",
-            suffixes=("_source", "_target"),
-        )
-        merged_df["label"] = merged_df["label"]
+            merged_df = pd.merge(
+                df_sm,
+                df_tm,
+                left_on="label",
+                right_on="label",
+                suffixes=("_source", "_target"),
+            )
+            merged_df["label"] = merged_df["label"]
+        except Exception as e:
+            merged_df = pd.DataFrame(
+                [[np.nan] * 7],
+                columns=[
+                    "label",
+                    "r_source",
+                    "g_source",
+                    "b_source",
+                    "r_target",
+                    "g_target",
+                    "b_target",
+                ],
+            )
 
         return im_pil, merged_df
     except Exception as e:  # pylint:disable=invalid-name
@@ -1172,7 +1202,7 @@ def get_average_color(x, y, image):  # pylint:disable=too-many-locals, invalid-n
     """Returns a 3-tuple containing the RGB value of the average color of the
     given square bounded area of length = n whose origin (top left corner)
     is (x, y) in the given image"""
-
+    logger.debug("Getting average color of %s", image)
     height = image.size[1]
 
     lower, upper = list(map(int, y))
@@ -1192,21 +1222,25 @@ def get_average_color(x, y, image):  # pylint:disable=too-many-locals, invalid-n
     reds = []
     greens = []
     blues = []
-
+    data = []
     for i in range(x_0, x_1):
         for j in range(y_0, y_1):
             red, green, blue = image.getpixel((i, j))
             reds.append(red)
             greens.append(green)
             blues.append(blue)
+            data.append({"R": red, "G": green, "B": blue})
 
     return (
-        np.mean(reds),
-        np.mean(greens),
-        np.mean(blues),
-        np.std(reds),
-        np.std(greens),
-        np.std(blues),
+        (
+            np.mean(reds),
+            np.mean(greens),
+            np.mean(blues),
+            np.std(reds),
+            np.std(greens),
+            np.std(blues),
+        ),
+        data,
     )
 
 
